@@ -10,7 +10,8 @@ To run this app locally, clone this repository and open the pipeline folder for 
 
 ```
 Example:
-cd smartforceps_segmentation_model
+
+cd smartforceps-segmentation-model
 
 python3 -m venv .venvs/dash
 ```
