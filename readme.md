@@ -1,5 +1,5 @@
 How to run this code:
 
-Navigate to HAR_dense_prediction_methods
+Navigate to each model folder
 
 run python -W ignore run.py
