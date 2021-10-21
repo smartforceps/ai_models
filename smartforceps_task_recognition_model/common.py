@@ -8,8 +8,8 @@ from collections import defaultdict
 import scipy
 import csv
 import itertools
-import tensorflow as tf
 from itertools import cycle
+import tensorflow as tf
 
 
 ###################################################################################
@@ -382,24 +382,28 @@ def getSubjectData(inputXData, inputYData, requiredSubjects, subjectData=None):
 # plot results of loss and accuracy over epochs
 
 def plot_loss_acc(history_results):
+    colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.Spectral(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.tab20b(i / float(5)) for i in range(5)]
+
     fig = plt.figure()
-    plt.plot(history_results.history['loss'])
-    plt.plot(history_results.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('val_loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'Validation'], loc='upper left')
+    plt.plot(history_results.history['loss'], color=colors[0])
+    plt.plot(history_results.history['val_loss'], color=colors[1])
+    plt.title('Model Loss')
+    plt.ylabel('Validation Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
     plt.ioff()
     plt.savefig('./results/graphs/loss_history.png')
     # plt.show()
 
     fig = plt.figure()
-    plt.plot(history_results.history['accuracy'])
-    plt.plot(history_results.history['val_accuracy'])
-    plt.title('model Accuracy')
-    plt.ylabel('val_accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'Validation'], loc='upper left')
+    plt.plot(history_results.history['accuracy'], color=colors[0])
+    plt.plot(history_results.history['val_accuracy'], color=colors[1])
+    plt.title('Model Accuracy')
+    plt.ylabel('Validation Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
     plt.ioff()
     plt.savefig('./results/graphs/accuracy_history.png')
     # plt.show()
@@ -411,14 +415,14 @@ def plot_loss_acc(history_results):
 def plot_confusion_matrix(cm, plot_classes,
                           normalize=False,
                           title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+                          cmap="BuGn"):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
     fig = plt.figure(figsize=(5, 5))
 
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.imshow(cm, interpolation='nearest', cmap=cmap, alpha=0.5)
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(plot_classes))
@@ -468,33 +472,23 @@ def multi_weighted_logloss(y_ohe, y_p):
 ##################################################################################
 # plot ROC curve
 
-# def plot_roc(fpr_list, tpr_list, auc_list):
-#     plt.figure(figsize=(12, 7))
-#     for i in range(0, len(fpr_list)):
-#         plt.plot(fpr_list[i], tpr_list[i], label=f'AUC (Trial) = {auc_list[i]:.2f}')
-#     plt.plot([0, 1], [0, 1], color='blue', linestyle='--', label='Baseline')
-#     plt.title('ROC Curve', size=20)
-#     plt.xlabel('False Positive Rate', size=14)
-#     plt.ylabel('True Positive Rate', size=14)
-#     plt.legend()
-#     plt.ioff()
-#     plt.savefig('./results/graphs/auc_history.png')
-
-
 def plot_roc(fpr, tpr, roc_auc, n_classes):
     lw = 2
     plt.figure(figsize=(12, 7))
     plt.plot(fpr["micro"], tpr["micro"],
              label='micro-average ROC curve (area = {0:0.2f})'
                    ''.format(roc_auc["micro"]),
-             color='deeppink', linestyle=':', linewidth=4)
+             color="orange", linestyle=':', linewidth=2)
 
     plt.plot(fpr["macro"], tpr["macro"],
              label='macro-average ROC curve (area = {0:0.2f})'
                    ''.format(roc_auc["macro"]),
-             color='navy', linestyle=':', linewidth=4)
+             color='g', linestyle=':', linewidth=2)
 
-    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.Spectral(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.tab20b(i / float(5)) for i in range(5)]
+    # colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
     for i, color in zip(range(n_classes), colors):
         plt.plot(fpr[i], tpr[i], color=color, lw=lw,
                  label='ROC curve of class {0} (area = {1:0.2f})'
@@ -512,22 +506,29 @@ def plot_roc(fpr, tpr, roc_auc, n_classes):
 
 
 def plot_roc_one_class(fpr, tpr, roc_auc, i):
+    colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.Spectral(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.tab20b(i / float(5)) for i in range(5)]
     plt.figure(figsize=(12, 7))
     lw = 2
-    plt.plot(fpr[i], tpr[i], color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[i])
-    plt.plot([0, 1], [0, 1], color='blue', lw=lw, linestyle='--')
+    # plt.plot(fpr[i], tpr[i], color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[i])
+    plt.plot(fpr[i], tpr[i], color=colors[0], lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[i])
+    plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
     plt.title('Receiver operating characteristic curve', size=20)
     plt.xlabel('False Positive Rate', size=14)
     plt.ylabel('True Positive Rate', size=14)
-    plt.legend(loc="lower right")
     plt.ioff()
     plt.savefig('./results/graphs/auc_history_one_class.png')
 
 
 def plot_precision_recall_all_classes(recall, precision, average_precision):
+    colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.Spectral(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.tab20b(i / float(5)) for i in range(5)]
     plt.figure(figsize=(12, 7))
-    plt.step(recall["micro"], precision["micro"], color='darkorange', where='post')
-    plt.title('Average precision score, micro-averaged over all classes: AP={0:0.2f}'
+    # plt.step(recall["micro"], precision["micro"], color='darkorange', where='post')
+    plt.step(recall["micro"], precision["micro"], color=colors[0], where='post')
+    plt.title('Average precision score, micro-averaged over all classes: Average Precision={0:0.2f}'
               .format(average_precision["micro"]), size=20)
     plt.xlabel('Recall', size=14)
     plt.ylabel('Precision', size=14)
@@ -539,7 +540,10 @@ def plot_precision_recall_all_classes(recall, precision, average_precision):
 
 def plot_precision_recall(recall, precision, average_precision, n_classes):
     # setup plot details
-    colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
+    colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.Spectral(i / float(5)) for i in range(5)]
+    # colors = [plt.cm.tab20b(i / float(5)) for i in range(5)]
+    # colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 
     plt.figure(figsize=(12, 7))
     f_scores = np.linspace(0.2, 0.8, num=4)
@@ -566,7 +570,7 @@ def plot_precision_recall(recall, precision, average_precision, n_classes):
 
     fig = plt.gcf()
     fig.subplots_adjust(bottom=0.25)
-    plt.title('Extension of Precision-Recall curve to multi-class', size=20)
+    plt.title('Extension of Precision-Recall curve to multi-class', size=24)
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('Recall', size=14)
@@ -575,5 +579,3 @@ def plot_precision_recall(recall, precision, average_precision, n_classes):
     plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
     plt.ioff()
     plt.savefig('./results/graphs/precision_recall.png')
-
-

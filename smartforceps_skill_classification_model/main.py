@@ -1,26 +1,34 @@
 # encoding=utf8
+import pandas as pd
 import numpy as np
+import tensorflow as tf
 from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
 # from keras.callbacks import CSVLogger
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc
 from sklearn.metrics import precision_recall_curve, average_precision_score
+from tensorflow.keras import backend as K
+import pickle
 # import unet_224_model
-# from smartforceps_dl_prediction_models_tf2.smartforceps_segment_model import unet_model
-# from smartforceps_dl_prediction_models_tf2.smartforceps_segment_model import data_load_segment
-# from smartforceps_dl_prediction_models_tf2.smartforceps_segment_model import unet_info
-# from smartforceps_dl_prediction_models_tf2.smartforceps_segment_model import common
-import unet_model
-import data_load_segment
-import unet_info
+import models_task
+import models_skill
+import data_load_skill
+import model_info
 import common
-import pandas as pd
+# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import models_skill
+# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import data_load_skill
+# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import model_info
+# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import common
 import logging
 import argparse
 import time
 import os
+import gc
 
 import warnings
 
@@ -32,7 +40,7 @@ if not os.path.exists('results/graphs'):
     os.makedirs('results/graphs')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', type=str, nargs='?', default='WISDMar', help="dataset name")
+parser.add_argument('--dataset', type=str, nargs='?', default='Smartforceps', help="dataset name")
 parser.add_argument('--subseq', type=int, nargs='?', default=224, help="loss name")
 # different network length (block number)
 parser.add_argument('--block', type=str, nargs='?', default='5', help="block number")
@@ -40,43 +48,51 @@ parser.add_argument('--net', type=str, nargs='?', default='unet', help="net name
 
 args = parser.parse_args()
 subseq = args.subseq
-# file_log = 'UNET_'+args.block+'_'+args.dataset+'_'+str(subseq)+'0501.log'
-# file_log = 'MASK_'+args.dataset+'_'+str(subseq)+'0501.log'
 file_log = './results/' + args.net + '_' + args.dataset + '_' + str(subseq) + '.log'
 
 logging.basicConfig(filename=file_log, level=logging.DEBUG)
-unet_info.begin()
+model_info.begin()
 
-read_processed_data = data_load_segment.load_data(args.dataset, subseq=subseq)
+start_total = time.perf_counter()
+
+read_processed_data = data_load_skill.load_data(args.dataset, subseq=subseq)
 
 X = read_processed_data[0]
 y = read_processed_data[1]
 X_train = read_processed_data[2]
-X_test = read_processed_data[3]
-y_train = read_processed_data[4]
-y_test = read_processed_data[5]
-N_FEATURES = read_processed_data[6]
-y_map_train = read_processed_data[7]
-y_map_test = read_processed_data[8]
-act_classes = read_processed_data[9]
-class_names = read_processed_data[10]
+X_val = read_processed_data[3]
+X_test = read_processed_data[4]
+y_train = read_processed_data[5]
+y_val = read_processed_data[6]
+y_test = read_processed_data[7]
+y_map_train = read_processed_data[8]
+wtable_train = read_processed_data[9]
+y_map_val = read_processed_data[10]
+y_map_test = read_processed_data[11]
+N_FEATURES = read_processed_data[12]
+act_classes = read_processed_data[13]
+class_names = read_processed_data[14]
 
-# get dense prediction results with overlap(transformed win data label's ground truth)
-# y_test_resh = y_test.reshape(y_test.shape[0], y_test.shape[2], -1)
-# y_test_resh_argmax = np.argmax(y_test_resh, axis=2)
-# labels_test_unary = y_test_resh_argmax.reshape(y_test_resh_argmax.size)
-# file_labels_test_unary = 'labels_gd_'+args.dataset+'_'+str(subseq)+'0317.npy'
-# np.save(file_labels_test_unary,labels_test_unary)
+
+# user defined loss function
+# https://www.kaggle.com/c/PLAsTiCC-2018/discussion/69795
+def mywloss(y_true, y_pred):
+    yc = tf.clip_by_value(y_pred, 1e-15, 1 - 1e-15)
+    loss = -(tf.reduce_mean(tf.reduce_mean(y_true * tf.math.log(yc), axis=0) / wtable_train))
+    return loss
+
 
 clfs = []
-oof_preds = np.zeros((y_train.shape[0], y_train.shape[1], y_train.shape[2], y_train.shape[3]))
-epochs = 50
-batch_size = 32
+oof_preds = np.zeros((y_train.shape[0], y_train.shape[1]))
+epochs = 100
+batch_size = 32  # 16
 optim_type = 'adam'
-learning_rate_list = [0.0001, 0.001, 0.01, 0.1]
-filters_list = [16, 32, 64]
-
+# optim_type = 'SGD'
 sum_time = 0
+hyper_params_list_len = 4
+learning_rate_list = [0.001, 0.01, 0.1]
+units_size_list = [100, 200, 400, 600]
+depth_list = [6, 8, 10, 12]
 
 acc_hist = []
 val_acc_hist = []
@@ -91,77 +107,52 @@ for i in range(len(learning_rate_list)):
     val_loss_hist.append([])
     model_hist.append([])
     model_var_hist.append([])
-    for j in range(len(filters_list)):
-
-        trainX, trainy = X_train, y_train
-        validX, validy = X_train, y_train
-
-        filters = filters_list[j]
-        print('filters = ', filters)
-
-        if (args.net == 'unet') and (args.block == '5'):
-            sub_model = unet_model.ZF_UNET_224(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                               OUTPUT_MASK_CHANNELS=act_classes)
-        elif (args.net == 'unet') and (args.block == '4'):
-            sub_model = unet_model.ZF_UNET_224_4(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                                 OUTPUT_MASK_CHANNELS=act_classes)
-        elif (args.net == 'unet') and (args.block == '3'):
-            sub_model = unet_model.ZF_UNET_224_3(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                                 OUTPUT_MASK_CHANNELS=act_classes)
-        elif (args.net == 'unet') and (args.block == '2'):
-            sub_model = unet_model.ZF_UNET_224_2(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                                 OUTPUT_MASK_CHANNELS=act_classes)
-        elif args.net == 'fcn':
-            sub_model = unet_model.FCN(inputsize=512, deconv_output_size=512, INPUT_CHANNELS=N_FEATURES,
-                                       num_classes=act_classes, filters=filters)
+    for j in range(hyper_params_list_len):
 
         learning_rate = learning_rate_list[i]
         print('learning rate = ', learning_rate)
+
+        trainX, trainy = X_train, y_train
+        validX, validy = X_val, y_val
+
+        if args.net == 'lstm_model':
+            units_size_val = units_size_list[j]
+            print('network units = ', units_size_val)
+            sub_model = models_task.lstm_model(units_size=units_size_val,
+                                               timesteps_count=subseq,
+                                               feature_count=N_FEATURES,
+                                               activation='relu',
+                                               n_output=act_classes)
+        elif args.net == 'inception_time':
+            depth_val = depth_list[j]
+            print('network depth = ', depth_val)
+            sub_model = models_skill.build_inception_model(
+                input_shape=trainX.shape[1:],
+                nb_classes=act_classes,
+                depth=depth_val)
 
         if optim_type == 'SGD':
             optim = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
         else:
             optim = Adam(lr=learning_rate)
 
-        sub_model.compile(loss='categorical_crossentropy', optimizer=optim, metrics=['accuracy'])
-        # lr_reducer = ReduceLROnPlateau(monitor='val_loss',
-        #                                factor=np.sqrt(0.1),
-        #                                cooldown=0,
-        #                                patience=10, min_lr=1e-12)
-        # callbacks = [lr_reducer]
-
-        # early_stopper = EarlyStopping(monitor='val_loss',
-        #                             patience=30)
-        #
-        # callbacks = [lr_reducer, early_stopper]
-
-        # callbacks_list = [
-        #     ModelCheckpoint("./results/keras_test.model",
-        #                     monitor='val_loss',
-        #                     mode='min',
-        #                     save_best_only=True,
-        #                     save_weights_only=True,
-        #                     verbose=0),
-        #     EarlyStopping(monitor='accuracy', patience=1)
-        # ]
+        sub_model.compile(loss=mywloss, optimizer=optim, metrics=['accuracy'])
 
         callbacks_list = [
-            ModelCheckpoint("./results/keras_test_" + str(i) + str(j) + ".model",
+            ModelCheckpoint("./results/keras_skill_incept_" + str(i) + str(j) + ".model",
                             monitor='val_loss',
                             mode='min',
                             save_best_only=True,
                             save_weights_only=True,
-                            verbose=0)
+                            verbose=1)
         ]
-
-        # history = model.fit(X, y, batch_size=batch_size, epochs=epochs, validation_split=0.3, callbacks=callbacks_list)
 
         history = sub_model.fit(trainX, trainy,
                                 validation_data=(validX, validy),
                                 epochs=epochs,
                                 batch_size=batch_size,
                                 shuffle=True,
-                                # verbose=0,
+                                verbose=1,
                                 callbacks=callbacks_list)
 
         sub_acc = np.array(history.history['accuracy'])
@@ -203,27 +194,22 @@ for i in range(acc.shape[0]):
                                                                                               val_acc[i]))
 
 print('Loading Best Model')
-model.load_weights('./results/keras_test_' + str(min_val_loss_idx[0].tolist()[0]) +
+model.load_weights('./results/keras_skill_incept_' +
+                   str(min_val_loss_idx[0].tolist()[0]) +
                    str(min_val_loss_idx[1].tolist()[0]) + '.model')
 # serialize model to JSON
 model_json = model.to_json()
-with open("./results/segment_model.json", "w") as json_file:
+with open("./results/keras_skill_incept.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model.save_weights("./results/segment_model.h5")
+model.save_weights("./results/keras_skill_incept.h5")
 print("Saved model to disk")
-# Get predicted probabilities for each class
+# get predicted probabilities for each class
 valid_pred = model.predict(validX, batch_size=batch_size)
 oof_preds = valid_pred
-
 print('MULTI WEIGHTED LOG LOSS : %.5f '
-      % common.multi_weighted_logloss(np.reshape(validy,
-                                                 (validy.shape[0] * validy.shape[2], validy.shape[3])),
-                                      np.reshape(valid_pred,
-                                                 (valid_pred.shape[0] * valid_pred.shape[2], valid_pred.shape[3]))))
+      % common.multi_weighted_logloss(validy, valid_pred))
 clfs.append(model)
-
-# end of loop
 
 # print model summary
 print('model summary:')
@@ -232,21 +218,13 @@ logging.info("model summary:")
 model.summary(print_fn=logging.info)
 
 # take the class with the highest probability from the train predictions
-classification_report_var = classification_report(pd.DataFrame(y_map_train),
-                                                  np.argmax(np.reshape(oof_preds,
-                                                                       (oof_preds.shape[0] * oof_preds.shape[2],
-                                                                        oof_preds.shape[3])),
-                                                            axis=1))
+classification_report_var = classification_report(pd.DataFrame(y_map_val),
+                                                  np.argmax(oof_preds, axis=1))
 print('classification report:\n', classification_report_var)
 logging.info('classification report:{}\n'.format(classification_report_var))
 
 print('MULTI WEIGHTED LOG LOSS : %.5f '
-      % common.multi_weighted_logloss(np.reshape(y_train,
-                                                 (y_train.shape[0] * y_train.shape[2],
-                                                  y_train.shape[3])),
-                                      np.reshape(oof_preds,
-                                                 (oof_preds.shape[0] * oof_preds.shape[2],
-                                                  oof_preds.shape[3]))))
+      % common.multi_weighted_logloss(y_val, oof_preds))
 
 print('__________________________________________________________________________________________________')
 print('testing the model and showing results:')
@@ -257,24 +235,20 @@ end = time.perf_counter()
 sum_time += (end - start)
 print('time passed for testing: ', str(end - start), 'sec')
 logging.info('mean_time={}'.format(str(end - start)))
-y_test_resh = y_test.reshape(y_test.shape[0], y_test.shape[2], -1)
-y_test_resh_argmax = np.argmax(y_test_resh, axis=2)
-labels_test_unary = y_test_resh_argmax.reshape(y_test_resh_argmax.size)
+y_test_argmax = np.argmax(y_test, axis=1)
+labels_test_unary = y_test_argmax.reshape(y_test_argmax.size)
 file_labels_test_unary = './results/' + 'labels_gd_' + args.dataset + '_' + \
-                         str(subseq) + '_' + args.net + args.block + '.npy '
+                         str(subseq) + '_' + args.net + '_' + args.block + '.npy'
 np.save(file_labels_test_unary, labels_test_unary)
 
-y_pred_raw = model.predict(X_test, batch_size=batch_size)
-y_pred_resh = y_pred_raw.reshape(y_pred_raw.shape[0], y_pred_raw.shape[2], -1)
-y_pred_resh_argmax = np.argmax(y_pred_resh, axis=2)
-y_pred = y_pred_resh_argmax.reshape(y_pred_resh_argmax.size)
-y_pred_prob = y_pred_resh.reshape(y_pred_resh_argmax.size, y_pred_resh.shape[2])
+y_pred_prob = model.predict(X_test, batch_size=batch_size)
+y_pred = np.argmax(y_pred_prob, axis=1)
 print('prediction results data shape: ', y_pred_prob.shape)
 file_y_pred = './results/' + 'y_pred_' + args.dataset + '_' + \
-              str(subseq) + '_' + args.net + args.block + '.npy'
+              str(subseq) + '_' + args.net + '_' + args.block + '.npy'
 np.save(file_y_pred, y_pred)
 file_y_pred_prob = './results/' + 'y_pred_prob_' + args.dataset + '_' + \
-                   str(subseq) + '_' + args.net + args.block + '.npy'
+                   str(subseq) + '_' + args.net + '_' + args.block + '.npy'
 np.save(file_y_pred_prob, y_pred_prob)
 
 # ROC curve and ROC area for each class
@@ -282,12 +256,10 @@ fpr = dict()
 tpr = dict()
 roc_auc = dict()
 for i in range(act_classes):
-    fpr[i], tpr[i], _ = roc_curve(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2)[:, i],
-                                  y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2)[:, i])
+    fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_pred_prob[:, i])
     roc_auc[i] = auc(fpr[i], tpr[i])
 # compute micro-average ROC curve and ROC area
-fpr["micro"], tpr["micro"], _ = roc_curve(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2).ravel(),
-                                          y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2).ravel())
+fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_pred_prob.ravel())
 roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
 # ROC curve and ROC area for all classes
@@ -304,18 +276,10 @@ tpr["macro"] = mean_tpr
 roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
 
 # multiclass area under ROC
-macro_roc_auc_ovo = roc_auc_score(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2),
-                                  y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2),
-                                  multi_class="ovo", average="macro")
-weighted_roc_auc_ovo = roc_auc_score(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2),
-                                     y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2),
-                                     multi_class="ovo", average="weighted")
-macro_roc_auc_ovr = roc_auc_score(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2),
-                                  y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2),
-                                  multi_class="ovr", average="macro")
-weighted_roc_auc_ovr = roc_auc_score(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2),
-                                     y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2),
-                                     multi_class="ovr", average="weighted")
+macro_roc_auc_ovo = roc_auc_score(y_test, y_pred_prob, multi_class="ovo", average="macro")
+weighted_roc_auc_ovo = roc_auc_score(y_test, y_pred_prob, multi_class="ovo", average="weighted")
+macro_roc_auc_ovr = roc_auc_score(y_test, y_pred_prob, multi_class="ovr", average="macro")
+weighted_roc_auc_ovr = roc_auc_score(y_test, y_pred_prob, multi_class="ovr", average="weighted")
 print("One-vs-One ROC AUC scores:\n{:.6f} (macro),\n{:.6f} "
       "(weighted by prevalence)"
       .format(macro_roc_auc_ovo, weighted_roc_auc_ovo))
@@ -334,22 +298,16 @@ precision_dict = dict()
 recall_dict = dict()
 average_precision = dict()
 for i in range(act_classes):
-    precision_dict[i], recall_dict[i], _ = precision_recall_curve(
-        y_test.reshape(y_test.shape[0] * y_test.shape[2], 2)[:, i],
-        y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2],
-                           2)[:, i])
-    average_precision[i] = average_precision_score(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2)[:, i],
-                                                   y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2],
-                                                                      2)[:, i])
+    precision_dict[i], recall_dict[i], _ = precision_recall_curve(y_test[:, i],
+                                                                  y_pred_prob[:, i])
+    average_precision[i] = average_precision_score(y_test[:, i],
+                                                   y_pred_prob[:, i])
 
 # a "micro-average": quantifying score on all classes jointly
-precision_dict["micro"], recall_dict["micro"], _ = precision_recall_curve(y_test.reshape(y_test.shape[0] *
-                                                                                         y_test.shape[2], 2).ravel(),
-                                                                          y_pred_raw.reshape(y_pred_raw.shape[0] *
-                                                                                             y_pred_raw.shape[2],
-                                                                                             2).ravel())
-average_precision["micro"] = average_precision_score(y_test.reshape(y_test.shape[0] * y_test.shape[2], 2),
-                                                     y_pred_raw.reshape(y_pred_raw.shape[0] * y_pred_raw.shape[2], 2),
+precision_dict["micro"], recall_dict["micro"], _ = precision_recall_curve(y_test.ravel(),
+                                                                          y_pred_prob.ravel())
+average_precision["micro"] = average_precision_score(y_test,
+                                                     y_pred_prob,
                                                      average="micro")
 print('Average precision score, micro-averaged over all classes: {0:0.2f}'
       .format(average_precision["micro"]))
@@ -366,6 +324,7 @@ logging.info("testing confusionmatrix:")
 logging.info('{}'.format(common.createConfusionMatrix(labels_test_unary + 1,
                                                       y_pred + 1,
                                                       label_index)))
+
 print('testing acc:{}'.format(accuracy))
 logging.info('testing acc:{}'.format(accuracy))
 print('testing fscore:{}'.format(fscore))
@@ -379,12 +338,14 @@ common.plot_confusion_matrix(common.createConfusionMatrix(labels_test_unary + 1,
                              plot_classes=class_names,
                              normalize=True,
                              title='Confusion matrix')
-
 print("saving the history result graphs")
 common.plot_loss_acc(history)
 
 print("saving the auc result graphs")
 common.plot_roc(fpr, tpr, roc_auc, act_classes)
+roc_dicts = {'fpr': fpr, 'tpr': tpr, 'roc_auc': roc_auc, 'act_classes': act_classes}
+with open('./results/' + 'roc_dicts.pkl', 'wb') as f:
+    pickle.dump(roc_dicts, f, pickle.HIGHEST_PROTOCOL)
 
 print("saving the auc result graphs for class 0 (coagulation)")
 common.plot_roc_one_class(fpr, tpr, roc_auc, 0)
@@ -396,3 +357,7 @@ print("saving the precision recall graph for each class")
 common.plot_precision_recall(recall_dict, precision_dict, average_precision, act_classes)
 
 print("results saved in _results_ folder")
+
+end_total = time.perf_counter()
+print('time passed for the whole process: ', str(end_total - start_total), 'sec')
+logging.info('mean_time_total={}'.format(str(end_total - start_total)))

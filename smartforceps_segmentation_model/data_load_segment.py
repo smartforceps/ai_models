@@ -51,16 +51,22 @@ def load_Smartforceps_segment(subseq):
          'ForceStatus']]
     df = df.dropna()
 
+    label = ['OFF', 'ON']
     # Show how many training examples exist for each of the two states
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6, 8))
+    colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     df['ForceStatus'].value_counts().plot(kind='bar',
-                                          title='Data Stats by Status Class')
+                                          title='Data Distribution by Status Class',
+                                          color=colors,
+                                          rot=45)
+
     plt.ioff()
     plt.savefig('./results/graphs/class_distribution.png')
     # plt.show()
 
     np_df = np.array(df.drop('ForceStatus', axis=1))
     norm_np_df = feature_normalization(np_df)
+    # norm_np_df = np_df.copy()
     print('first 3 columns of normalized data:')
     print(norm_np_df[:3])
 
@@ -77,9 +83,9 @@ def load_Smartforceps_segment(subseq):
     print('\ndata shape')
     print(reshaped_segments.shape)
 
-    label = df['ForceStatus'].values
+    label_vals = df['ForceStatus'].values
     label_encoder = LabelEncoder()
-    integer_encoded1 = label_encoder.fit_transform(label)
+    integer_encoded1 = label_encoder.fit_transform(label_vals)
     integer_encoded2 = integer_encoded1.reshape(len(integer_encoded1), 1)
     onehot_encoder = OneHotEncoder(sparse=False)
     onehot_encoded = onehot_encoder.fit_transform(integer_encoded2)
@@ -92,8 +98,11 @@ def load_Smartforceps_segment(subseq):
     print('label shape')
     print(reshaped_labels.shape)
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train_val, X_test, y_train_val, y_test = train_test_split(
         reshaped_segments, reshaped_labels, test_size=0.3, random_state=RANDOM_SEED)
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_val, y_train_val, test_size=0.1, random_state=RANDOM_SEED)
     print('training data shape')
     print(X_train.shape)
 
@@ -106,8 +115,17 @@ def load_Smartforceps_segment(subseq):
     for i, val in enumerate(unique_y):
         class_map[val] = i
 
-    map_y_train = np.zeros((integer_encoded2.shape[0],))
+    # map_y_train = np.zeros((integer_encoded2.shape[0],))
     map_y_train = np.array([class_map[val[0]] for val in y_train_full])
+
+    y_val_full = np.reshape(y_val, (y_val.shape[0] * y_val.shape[2], 2))
+    unique_y = np.unique(y_val_full)
+    class_map = dict()
+    for i, val in enumerate(unique_y):
+        class_map[val] = i
+
+    # map_y_val = np.zeros((integer_encoded2.shape[0],))
+    map_y_val = np.array([class_map[val[0]] for val in y_val_full])
 
     y_test_full = np.reshape(y_test, (y_test.shape[0] * y_test.shape[2], 2))
     unique_y = np.unique(y_test_full)
@@ -120,14 +138,16 @@ def load_Smartforceps_segment(subseq):
     output = [reshaped_segments,
               reshaped_labels,
               X_train,
+              X_val,
               X_test,
               y_train,
+              y_val,
               y_test,
               N_FEATURES,
               map_y_train,
+              map_y_val,
               map_y_test,
               act_classes,
-              list(np.unique(label))]
+              list(label)]
 
     return output
-

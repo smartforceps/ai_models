@@ -1,7 +1,7 @@
 import os
 
 # unet subsequence analysis different dataset
-os.system("python main.py --dataset Smartforceps --subseq 96")
+os.system("python main.py --dataset Smartforceps --subseq 224")
 
 # UNET different block on different datasets
 

@@ -9,12 +9,14 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from tensorflow.keras import backend as K
 import pickle
 # import unet_224_model
 import models_task
+import models_skill
 import data_load_task
 import model_info
 import common
@@ -54,21 +56,26 @@ file_log = './results/' + args.net + '_' + args.dataset + '_' + str(subseq) + '.
 logging.basicConfig(filename=file_log, level=logging.DEBUG)
 model_info.begin()
 
+start_total = time.perf_counter()
+
 read_processed_data = data_load_task.load_data(args.dataset, subseq=subseq)
 
 X = read_processed_data[0]
 y = read_processed_data[1]
 X_train = read_processed_data[2]
-X_test = read_processed_data[3]
-y_train = read_processed_data[4]
-y_test = read_processed_data[5]
-y_map_train = read_processed_data[6]
-y_map_test = read_processed_data[7]
-wtable_train = read_processed_data[8]
-N_FEATURES = read_processed_data[9]
-y_map = read_processed_data[10]
-act_classes = read_processed_data[11]
-class_names = read_processed_data[12]
+X_val = read_processed_data[3]
+X_test = read_processed_data[4]
+y_train = read_processed_data[5]
+y_val = read_processed_data[6]
+y_test = read_processed_data[7]
+y_map_train = read_processed_data[8]
+wtable_train = read_processed_data[9]
+y_map_test = read_processed_data[10]
+N_FEATURES = read_processed_data[11]
+y_train_raw = read_processed_data[12]
+y_val_raw = read_processed_data[13]
+act_classes = read_processed_data[14]
+class_names = read_processed_data[15]
 
 
 # user defined loss function
@@ -83,12 +90,14 @@ folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
 
 clfs = []
 oof_preds = np.zeros((y_train.shape[0], y_train.shape[1]))
-epochs = 250
-batch_size = 32
+epochs = 150
+batch_size = 128  # 32
 optim_type = 'adam'
 sum_time = 0
-learning_rate_list = [0.0001, 0.001, 0.01, 0.1]
-units_size_list = [50, 100, 200, 400]
+hyper_params_list_len = 4
+learning_rate_list = [0.001, 0.01, 0.1]
+units_size_list = [100, 200, 400, 600]
+depth_list = [6, 8, 10, 12]
 
 acc_hist = []
 val_acc_hist = []
@@ -103,23 +112,29 @@ for i in range(len(learning_rate_list)):
     val_loss_hist.append([])
     model_hist.append([])
     model_var_hist.append([])
-    for j in range(len(units_size_list)):
+    for j in range(hyper_params_list_len):
 
         learning_rate = learning_rate_list[i]
         print('learning rate = ', learning_rate)
 
-        units_size_val = units_size_list[i]
-        print('network units = ', units_size_val)
-
         trainX, trainy = X_train, y_train
-        validX, validy = X_train, y_train
+        validX, validy = X_val, y_val
 
         if args.net == 'lstm_model':
+            units_size_val = units_size_list[j]
+            print('network units = ', units_size_val)
             sub_model = models_task.lstm_model(units_size=units_size_val,
                                                timesteps_count=subseq,
                                                feature_count=N_FEATURES,
                                                activation='relu',
                                                n_output=act_classes)
+        elif args.net == 'inception_time':
+            depth_val = depth_list[j]
+            print('network depth = ', depth_val)
+            sub_model = models_skill.build_inception_model(
+                input_shape=trainX.shape[1:],
+                nb_classes=act_classes,
+                depth=depth_val)
 
         if optim_type == 'SGD':
             optim = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
@@ -217,13 +232,13 @@ logging.info("model summary:")
 model.summary(print_fn=logging.info)
 
 # take the class with the highest probability from the train predictions
-classification_report_var = classification_report(pd.DataFrame(y_map),
+classification_report_var = classification_report(pd.DataFrame(y_val_raw),
                                                   np.argmax(oof_preds, axis=1))
 print('classification report:\n', classification_report_var)
 logging.info('classification report:{}\n'.format(classification_report_var))
 
 print('MULTI WEIGHTED LOG LOSS : %.5f '
-      % common.multi_weighted_logloss(y_train, oof_preds))
+      % common.multi_weighted_logloss(y_val, oof_preds))
 
 print('__________________________________________________________________________________________________')
 print('testing the model and showing results:')
@@ -342,6 +357,9 @@ common.plot_loss_acc(history)
 
 print("saving the auc result graphs")
 common.plot_roc(fpr, tpr, roc_auc, act_classes)
+roc_dicts = {'fpr': fpr, 'tpr': tpr, 'roc_auc': roc_auc, 'act_classes': act_classes}
+with open('./results/' + 'roc_dicts.pkl', 'wb') as f:
+    pickle.dump(roc_dicts, f, pickle.HIGHEST_PROTOCOL)
 
 print("saving the auc result graphs for class 0 (coagulation)")
 common.plot_roc_one_class(fpr, tpr, roc_auc, 0)
@@ -353,3 +371,7 @@ print("saving the precision recall graph for each class")
 common.plot_precision_recall(recall_dict, precision_dict, average_precision, act_classes)
 
 print("results saved in _results_ folder")
+
+end_total = time.perf_counter()
+print('time passed for the whole process: ', str(end_total - start_total), 'sec')
+logging.info('mean_time_total={}'.format(str(end_total - start_total)))
