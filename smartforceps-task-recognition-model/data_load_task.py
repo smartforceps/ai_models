@@ -5,6 +5,7 @@
     
 """
 
+import os
 import numpy as np
 import pandas as pd
 from numpy import stack
@@ -208,12 +209,10 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_task(window_size):
-    # original force data
-    # df = pd.read_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_force_data_with_label.csv',
-    #                  index_col=0, low_memory=False).iloc[:, [0, 1, 2, 6, 11]]
+    os.chdir('..')
     # augmented force data
     df = pd.read_csv(
-        '/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_force_data_with_label_aug.csv',
+        './data/df_force_data_with_label_aug.csv',
         index_col=0, low_memory=False)
 
     label = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']

@@ -313,7 +313,7 @@ def py_tsfeatures(df, duration):
 
 
 df = pd.read_csv(
-    '/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_force_data_with_label.csv',
+    './data/df_force_data_with_label.csv',
     index_col=0, low_memory=False)
 
 label_task = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']
@@ -369,12 +369,12 @@ df_feature_label.replace({'Task.Label': {0: label_task[0],
 df_feature_label.replace({'Skill.Label': {0: label_skill[0],
                                           1: label_skill[1]}}, inplace=True)
 
-df_feature_label.to_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_feature_label.csv')
+df_feature_label.to_csv('./data/df_feature_label.csv')
 
 ######
 # read the processed feature data
 
-df_feature_label = pd.read_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_feature_label.csv',
+df_feature_label = pd.read_csv('./data/df_feature_label.csv',
                                index_col=0).rename(columns={'Duration.Force': 'Duration Force',
                                                             'Range.Force': 'Range Force',
                                                             'Task.Label': 'Task Label',
@@ -402,7 +402,7 @@ df_feature_subset_out_removed = df_feature_subset_norm[(np.abs(stats.zscore(df_f
                                                                             df_feature_subset_norm.columns !=
                                                                             category])) < 3).all(axis=1)]
 
-path = '/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/feature data/'
+path = './data/feature data/'
 
 sns.pairplot(df_feature_subset_out_removed, kind="reg", hue=category, corner=True,
              plot_kws={'scatter_kws': {'alpha': 0.2}})
@@ -413,9 +413,9 @@ plt.savefig(path + 'features_pairwise_plot_' + category + '_with_' + features_li
 # compare augmented segments with the original
 
 df_segs_list_noid = pd.read_csv(
-    '/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_segs_list_noid.csv', index_col=0)
+    './data/df_segs_list_noid.csv', index_col=0)
 df_segs_list_noid_aug = pd.read_csv(
-    '/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_segs_list_noid_aug.csv', index_col=0)
+    './data/df_segs_list_noid_aug.csv', index_col=0)
 
 df_segs_list_noid['mean'] = df_segs_list_noid.iloc[:, 1:401].mean(axis=1)
 df_segs_list_noid['range'] = df_segs_list_noid.iloc[:, 1:401].max(axis=1) - \
@@ -589,7 +589,8 @@ ax_main.title.set_fontsize(24)
 for item in ([ax_main.xaxis.label, ax_main.yaxis.label] + ax_main.get_xticklabels() + ax_main.get_yticklabels()):
     item.set_fontsize(18)
 
-path = '/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/DTW_data_augmentation/SmartForceps_Archive/'
+
+path = './data/DTW_data_augmentation/SmartForceps_Archive/'
 
 plt.ioff()
 plt.savefig(path + 'augmentation_segments_plot_.png')

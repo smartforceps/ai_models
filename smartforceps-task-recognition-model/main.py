@@ -15,15 +15,11 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 from tensorflow.keras import backend as K
 import pickle
 # import unet_224_model
-import models_task
-import models_skill
+import model_lstm
+import model_ineption
 import data_load_task
 import model_info
 import common
-# from smartforceps_dl_prediction_models_tf2.smartforceps_task_model import models_task
-# from smartforceps_dl_prediction_models_tf2.smartforceps_task_model import data_load_task
-# from smartforceps_dl_prediction_models_tf2.smartforceps_task_model import model_info
-# from smartforceps_dl_prediction_models_tf2.smartforceps_task_model import common
 import pandas as pd
 import logging
 import argparse
@@ -49,8 +45,6 @@ parser.add_argument('--net', type=str, nargs='?', default='unet', help="net name
 
 args = parser.parse_args()
 subseq = args.subseq
-# file_log = 'UNET_'+args.block+'_'+args.dataset+'_'+str(subseq)+'.log'
-# file_log = 'MASK_'+args.dataset+'_'+str(subseq)+'.log'
 file_log = './results/' + args.net + '_' + args.dataset + '_' + str(subseq) + '.log'
 
 logging.basicConfig(filename=file_log, level=logging.DEBUG)
@@ -91,7 +85,7 @@ folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
 clfs = []
 oof_preds = np.zeros((y_train.shape[0], y_train.shape[1]))
 epochs = 150
-batch_size = 128  # 32
+batch_size = 128
 optim_type = 'adam'
 sum_time = 0
 hyper_params_list_len = 4
@@ -123,15 +117,15 @@ for i in range(len(learning_rate_list)):
         if args.net == 'lstm_model':
             units_size_val = units_size_list[j]
             print('network units = ', units_size_val)
-            sub_model = models_task.lstm_model(units_size=units_size_val,
-                                               timesteps_count=subseq,
-                                               feature_count=N_FEATURES,
-                                               activation='relu',
-                                               n_output=act_classes)
+            sub_model = model_lstm.lstm_model(units_size=units_size_val,
+                                              timesteps_count=subseq,
+                                              feature_count=N_FEATURES,
+                                              activation='relu',
+                                              n_output=act_classes)
         elif args.net == 'inception_time':
             depth_val = depth_list[j]
             print('network depth = ', depth_val)
-            sub_model = models_skill.build_inception_model(
+            sub_model = model_ineption.build_inception_model(
                 input_shape=trainX.shape[1:],
                 nb_classes=act_classes,
                 depth=depth_val)

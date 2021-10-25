@@ -238,7 +238,7 @@ def prepare_augmented_seg_data():
         df = pd.DataFrame([seg_num, left_force, right_force, task_type]).transpose()
         df.columns = ['SegmentNumber', 'LeftCalibratedForceValue', 'RightCalibratedForceValue', 'TaskCategory']
 
-        df.to_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_force_data_with_label_aug.csv')
+        df.to_csv('./data/df_force_data_with_label_aug.csv')
     else:
         df_segs_aug = 'augmented data not available'
 

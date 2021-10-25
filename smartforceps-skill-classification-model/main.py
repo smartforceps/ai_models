@@ -15,15 +15,11 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 from tensorflow.keras import backend as K
 import pickle
 # import unet_224_model
-import models_task
-import models_skill
+import model_lstm
+import model_ineption
 import data_load_skill
 import model_info
 import common
-# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import models_skill
-# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import data_load_skill
-# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import model_info
-# from smartforceps_dl_prediction_models_tf2.smartforceps_skill_model import common
 import logging
 import argparse
 import time
@@ -85,9 +81,8 @@ def mywloss(y_true, y_pred):
 clfs = []
 oof_preds = np.zeros((y_train.shape[0], y_train.shape[1]))
 epochs = 100
-batch_size = 32  # 16
+batch_size = 32
 optim_type = 'adam'
-# optim_type = 'SGD'
 sum_time = 0
 hyper_params_list_len = 4
 learning_rate_list = [0.001, 0.01, 0.1]
@@ -118,15 +113,15 @@ for i in range(len(learning_rate_list)):
         if args.net == 'lstm_model':
             units_size_val = units_size_list[j]
             print('network units = ', units_size_val)
-            sub_model = models_task.lstm_model(units_size=units_size_val,
-                                               timesteps_count=subseq,
-                                               feature_count=N_FEATURES,
-                                               activation='relu',
-                                               n_output=act_classes)
+            sub_model = model_lstm.lstm_model(units_size=units_size_val,
+                                              timesteps_count=subseq,
+                                              feature_count=N_FEATURES,
+                                              activation='relu',
+                                              n_output=act_classes)
         elif args.net == 'inception_time':
             depth_val = depth_list[j]
             print('network depth = ', depth_val)
-            sub_model = models_skill.build_inception_model(
+            sub_model = model_ineption.build_inception_model(
                 input_shape=trainX.shape[1:],
                 nb_classes=act_classes,
                 depth=depth_val)

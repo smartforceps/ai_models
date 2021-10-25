@@ -4,7 +4,7 @@
     u_net model for time series data segmentation
     
 """
-
+import os
 import numpy as np
 import pandas as pd
 import h5py
@@ -41,11 +41,8 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_segment(subseq):
-    # df = pd.read_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_force_data_with_label.csv')[
-    #     ['LeftCalibratedForceValue',
-    #      'RightCalibratedForceValue',
-    #      'ForceStatus']]
-    df = pd.read_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_force_seg_filtered.csv')[
+    os.chdir('..')
+    df = pd.read_csv('./data/df_force_seg_filtered.csv')[
         ['LeftCalibratedForceValue',
          'RightCalibratedForceValue',
          'ForceStatus']]
@@ -62,7 +59,7 @@ def load_Smartforceps_segment(subseq):
 
     plt.ioff()
     plt.savefig('./results/graphs/class_distribution.png')
-    # plt.show()
+    plt.show()
 
     np_df = np.array(df.drop('ForceStatus', axis=1))
     norm_np_df = feature_normalization(np_df)
