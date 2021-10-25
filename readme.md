@@ -30,7 +30,9 @@ Install all required packages by running:
 pip install -r requirements.txt
 ```
 
-Run this app locally by:
+Run each modeling codes locally by navigating to the folder:
 ```
+cd smartforceps-segmentation-model
+
 python -W ignore run.py
 ```
