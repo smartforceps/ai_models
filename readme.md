@@ -6,12 +6,12 @@ AI modeling framework for SmartForceps, a sensorized surgical bipolar forceps ca
 
 ## How to run the codes locally
 
-To run this app locally, clone this repository and open the pipeline folder for each model in your terminal/Command Prompt. We suggest you to create a virtual environment for installation of required packages for this pipeline.
+To run this app locally, clone this repository and open the pipeline folder in your terminal/Command Prompt. We suggest you to create a virtual environment for installation of required packages for this pipeline.
 
 ```
 Example:
 
-cd smartforceps-segmentation-model
+cd ai_models
 
 python3 -m venv .venvs/dash
 ```
