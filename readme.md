@@ -13,16 +13,16 @@ Example:
 
 cd ai_models
 
-python3 -m venv .venvs/dash
+python3 -m venv .venvs/sf_ai_models
 ```
 In Unix System:
 ```
-source .venvs/dash/bin/activate
+source .venvs/sf_ai_models/bin/activate
 ```
 
 In Windows: 
 ```
-.venvs/dash\Scripts\activate
+.venvs/sf_ai_models\Scripts\activate
 ```
 
 Install all required packages by running:
