@@ -169,6 +169,10 @@ np.save('./results/val_loss_history.npy', val_loss_hist, allow_pickle=True)
 np.save('./results/val_acc_history.npy', val_acc_hist, allow_pickle=True)
 
 # find minimum validation loss across iterations
+logging.info('learning rate list:{}'.format(learning_rate_list))
+logging.info('units size list (LSTM):{}'.format(units_size_list))
+logging.info('depth list (InceptionTime):{}'.format(depth_list))
+
 min_val_loss_idx = np.where(val_loss_hist == np.amin(val_loss_hist))
 print('min validation loss idx: ', min_val_loss_idx)
 logging.info('min validation loss idx: {}'.format(", ".join(str(x) for x in min_val_loss_idx)))
