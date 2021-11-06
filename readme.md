@@ -1,4 +1,4 @@
-# smartforceps-AI-models
+# SmartForceps-AI-models
 
 ## About this repo
 
