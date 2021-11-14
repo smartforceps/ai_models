@@ -1,5 +1,3 @@
-# encoding=utf8
-
 """
     model for time series skill data classification
 

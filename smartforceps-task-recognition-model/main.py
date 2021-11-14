@@ -1,4 +1,3 @@
-# encoding=utf8
 import numpy as np
 from numpy import mean
 from numpy import std

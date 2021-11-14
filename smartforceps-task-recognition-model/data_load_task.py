@@ -1,4 +1,3 @@
-# encoding=utf8
 
 """
     model for smartforceps task data classification
