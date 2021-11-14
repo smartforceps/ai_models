@@ -1,4 +1,3 @@
-# encoding=utf8
 
 """
     u_net model for time series data segmentation

@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
@@ -10,11 +8,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, BatchNormalization, Dropout, LeakyReLU
 from tensorflow.keras import backend as K
 
-
-# Number of image channels (for example 3 in case of RGB, or 1 for grayscale images)cdcd
-# INPUT_CHANNELS = 3
-# Number of output masks (1 in case you predict only one type of objects)pyth
-# OUTPUT_MASK_CHANNELS = 6
 
 def preprocess_batch(batch):
     batch /= 256

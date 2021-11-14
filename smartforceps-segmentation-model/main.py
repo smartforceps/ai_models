@@ -101,20 +101,8 @@ for i in range(len(learning_rate_list)):
         print('filters = ', filters)
 
         if (args.net == 'unet') and (args.block == '5'):
-            sub_model = model_unet.ZF_UNET_224(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
+            sub_model = model_unet.SF_unet(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
                                                OUTPUT_MASK_CHANNELS=act_classes)
-        elif (args.net == 'unet') and (args.block == '4'):
-            sub_model = model_unet.ZF_UNET_224_4(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                                 OUTPUT_MASK_CHANNELS=act_classes)
-        elif (args.net == 'unet') and (args.block == '3'):
-            sub_model = model_unet.ZF_UNET_224_3(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                                 OUTPUT_MASK_CHANNELS=act_classes)
-        elif (args.net == 'unet') and (args.block == '2'):
-            sub_model = model_unet.ZF_UNET_224_2(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
-                                                 OUTPUT_MASK_CHANNELS=act_classes)
-        elif args.net == 'fcn':
-            sub_model = model_unet.FCN(inputsize=512, deconv_output_size=512, INPUT_CHANNELS=N_FEATURES,
-                                       num_classes=act_classes, filters=filters)
 
         learning_rate = learning_rate_list[i]
         print('learning rate = ', learning_rate)
