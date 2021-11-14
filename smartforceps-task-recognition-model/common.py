@@ -63,8 +63,6 @@ def checkAccuracy(original, predicted, labels):
     accuracy = float(ctrue) / (ctrue + cfalse)
     return accuracy, precision, recall, f_score, fw
 
-##################################################################################
-
 # This function creates the Confusion Matrix for the predicted model
 def createConfusionMatrix(predictedYLabels, originalYLabels, labelList):
     confusionMatrix = np.zeros((len(labelList), len(labelList)))
@@ -84,10 +82,7 @@ def createConfusionMatrix(predictedYLabels, originalYLabels, labelList):
     return confusionMatrix
 
 
-##################################################################################
 # plot results of loss and accuracy over epochs
-
-
 def plot_loss_acc(history_results):
     colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     # colors = [plt.cm.Spectral(i / float(5)) for i in range(5)]
@@ -116,9 +111,7 @@ def plot_loss_acc(history_results):
     # plt.show()
 
 
-##################################################################################
 # plot the confusion matrix
-# http://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
 def plot_confusion_matrix(cm, plot_classes,
                           normalize=False,
                           title='Confusion matrix',
@@ -150,7 +143,6 @@ def plot_confusion_matrix(cm, plot_classes,
     plt.savefig('./results/graphs/confusion_matrix.png')
 
 
-##################################################################################
 # plot the confusion matrix
 def multi_weighted_logloss(y_ohe, y_p):
     """
@@ -176,9 +168,7 @@ def multi_weighted_logloss(y_ohe, y_p):
     return loss
 
 
-##################################################################################
 # plot ROC curve
-
 def plot_roc(fpr, tpr, roc_auc, n_classes):
     lw = 2
     plt.figure(figsize=(12, 7))
