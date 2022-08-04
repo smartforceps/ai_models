@@ -215,6 +215,7 @@ def load_Smartforceps_skill_3d(window_size):
     label = ['Novice', 'Expert']
 
     # show how many training examples exist for each of the two states
+    os.chdir('smartforceps-skill-classification-model')
     fig = plt.figure(figsize=(6, 6))
     colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     df['SkillClass'].value_counts().plot(kind='bar',

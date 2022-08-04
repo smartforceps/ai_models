@@ -49,6 +49,7 @@ def load_Smartforceps_segment(subseq):
 
     label = ['OFF', 'ON']
     # Show how many training examples exist for each of the two states
+    os.chdir('smartforceps-segmentation-model')
     fig = plt.figure(figsize=(6, 8))
     colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     df['ForceStatus'].value_counts().plot(kind='bar',

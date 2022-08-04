@@ -217,6 +217,7 @@ def load_Smartforceps_task(window_size):
     label = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']
 
     # show how many training examples exist for each of the two states
+    os.chdir('smartforceps-task-recognition-model')
     fig = plt.figure(figsize=(6, 8))
     colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     df['TaskCategory'].value_counts().plot(kind='bar',
