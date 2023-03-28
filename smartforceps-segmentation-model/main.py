@@ -1,3 +1,4 @@
+# encoding=utf8
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 # from keras.callbacks import CSVLogger
@@ -7,9 +8,10 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc
 from sklearn.metrics import precision_recall_curve, average_precision_score
-import model_unet
+# import unet_224_model
+import unet_model
 import data_load_segment
-import model_info
+import unet_info
 import common
 import pandas as pd
 import logging
@@ -20,8 +22,6 @@ import os
 import warnings
 
 warnings.filterwarnings('ignore')
-
-print('loaded')
 
 if not os.path.exists('results'):
     os.makedirs('results')
@@ -40,7 +40,7 @@ subseq = args.subseq
 file_log = './results/' + args.net + '_' + args.dataset + '_' + str(subseq) + '.log'
 
 logging.basicConfig(filename=file_log, level=logging.DEBUG)
-model_info.begin()
+unet_info.begin()
 
 start_total = time.perf_counter()
 
@@ -100,8 +100,20 @@ for i in range(len(learning_rate_list)):
         print('filters = ', filters)
 
         if (args.net == 'unet') and (args.block == '5'):
-            sub_model = model_unet.SF_unet(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
+            sub_model = unet_model.ZF_UNET_224(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
                                                OUTPUT_MASK_CHANNELS=act_classes)
+        elif (args.net == 'unet') and (args.block == '4'):
+            sub_model = unet_model.ZF_UNET_224_4(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
+                                                 OUTPUT_MASK_CHANNELS=act_classes)
+        elif (args.net == 'unet') and (args.block == '3'):
+            sub_model = unet_model.ZF_UNET_224_3(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
+                                                 OUTPUT_MASK_CHANNELS=act_classes)
+        elif (args.net == 'unet') and (args.block == '2'):
+            sub_model = unet_model.ZF_UNET_224_2(subseq=subseq, filters=filters, INPUT_CHANNELS=N_FEATURES,
+                                                 OUTPUT_MASK_CHANNELS=act_classes)
+        elif args.net == 'fcn':
+            sub_model = unet_model.FCN(inputsize=512, deconv_output_size=512, INPUT_CHANNELS=N_FEATURES,
+                                       num_classes=act_classes, filters=filters)
 
         learning_rate = learning_rate_list[i]
         print('learning rate = ', learning_rate)

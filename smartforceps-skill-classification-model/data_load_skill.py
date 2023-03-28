@@ -1,9 +1,10 @@
+# encoding=utf8
+
 """
     model for time series skill data classification
 
 """
 
-import os
 import numpy as np
 import pandas as pd
 from numpy import stack
@@ -46,10 +47,20 @@ def bw_filter(signal_in):
     return output
 
 
-def py_tsfeatures(df, duration):
-    # df_result = pd.DataFrame(data={'Duration.Force': [round(duration, 4)]})
-    df_result = pd.DataFrame(data={'Duration.Force': [round((max(df['MillisecondsSinceRecord']) -
-                                                             min(df['MillisecondsSinceRecord'])) / 1000, 4)]})
+"""
+Select Features:
+
+Diff Force SD, Min Force, Crossing Points, Normtest, Flat Spots, 
+Linearity, Skewness, First Zero Autocorrelation, Median Force
+
+"""
+
+
+def py_tsfeatures(df):
+    df_result = pd.DataFrame(data={'data': [0]})
+
+    # df_result['Duration.Force'] = round((max(df['MillisecondsSinceRecord']) -
+    #                                      min(df['MillisecondsSinceRecord'])) / 1000, 4)
 
     # df_result['Mean.Force'] = round(mean([df['LeftCalibratedForceValue'].mean(),
     #                                       df['RightCalibratedForceValue'].mean()]), 4)
@@ -57,14 +68,14 @@ def py_tsfeatures(df, duration):
     # df_result['Max.Force'] = round(max(df['LeftCalibratedForceValue'].max(),
     #                                    df['RightCalibratedForceValue'].max()), 4)
     #
-    # df_result['Min.Force'] = round(min(df['LeftCalibratedForceValue'].min(),
-    #                                    df['RightCalibratedForceValue'].min()), 4)
+    df_result['Min.Force'] = round(min(df['LeftCalibratedForceValue'].min(),
+                                       df['RightCalibratedForceValue'].min()), 4)
 
-    df_result['Range.Force'] = round(df['LeftCalibratedForceValue'].max() -
-                                     df['RightCalibratedForceValue'].min(), 4)
+    # df_result['Range.Force'] = round(df['LeftCalibratedForceValue'].max() -
+    #                                  df['RightCalibratedForceValue'].min(), 4)
 
-    # df_result['Median.Force'] = round(mean([df['LeftCalibratedForceValue'].median(),
-    #                                         df['RightCalibratedForceValue'].median()]), 4)
+    df_result['Median.Force'] = round(mean([df['LeftCalibratedForceValue'].median(),
+                                            df['RightCalibratedForceValue'].median()]), 4)
     #
     # df_result['SD.Force'] = round(max(df['LeftCalibratedForceValue'].std(),
     #                                   df['RightCalibratedForceValue'].std()), 4)
@@ -72,14 +83,14 @@ def py_tsfeatures(df, duration):
     # df_result['Coef.Variance'] = round(max(df[['LeftCalibratedForceValue']].apply(cv)[0],
     #                                        df[['RightCalibratedForceValue']].apply(cv)[0]), 4)
     #
-    # df_result['Skewness'] = round(max([abs(skew(df['LeftCalibratedForceValue'])),
-    #                                    abs(skew(df['RightCalibratedForceValue']))]), 4)
+    df_result['Skewness'] = round(max([abs(skew(df['LeftCalibratedForceValue'])),
+                                       abs(skew(df['RightCalibratedForceValue']))]), 4)
     #
     # df_result['Kurtosis'] = round(max([abs(kurtosis(df['LeftCalibratedForceValue'])),
     #                                    abs(kurtosis(df['RightCalibratedForceValue']))]), 4)
     #
-    # df_result['Normtest'] = round(min(normaltest(df['LeftCalibratedForceValue']).pvalue,
-    #                                   normaltest(df['RightCalibratedForceValue']).pvalue), 4)
+    df_result['Normtest'] = round(min(normaltest(df['LeftCalibratedForceValue']).pvalue,
+                                      normaltest(df['RightCalibratedForceValue']).pvalue), 4)
     #
     # peaks_left, properties_left = find_peaks(bw_filter(df['LeftCalibratedForceValue'].to_numpy()),
     #                                          distance=5,
@@ -93,13 +104,13 @@ def py_tsfeatures(df, duration):
     # try:
     #     df_result['Peaks.Count'] = len(set(peaks_left.tolist() + peaks_right.tolist()))
     #
-    #     df_result['Max.Peak.Value'] = max(max((df['LeftCalibratedForceValue'].iloc[peaks_right] -
-    #                                            df['LeftCalibratedForceValue'].mean()).to_list()),
-    #                                       max((df['RightCalibratedForceValue'].iloc[peaks_right] -
-    #                                            df['RightCalibratedForceValue'].mean()).to_list()))
+    #     # df_result['Max.Peak.Value'] = max(max((df['LeftCalibratedForceValue'].iloc[peaks_right] -
+    #     #                                        df['LeftCalibratedForceValue'].mean()).to_list()),
+    #     #                                   max((df['RightCalibratedForceValue'].iloc[peaks_right] -
+    #     #                                        df['RightCalibratedForceValue'].mean()).to_list()))
     # except:
     #     df_result['Peaks.Count'] = 0
-    #     df_result['Max.Peak.Value'] = np.nan
+    #     # df_result['Max.Peak.Value'] = np.nan
     #
     # df_result['Frequency'] = (df_result[['Peaks.Count']].to_numpy()[0][0] + 1) / \
     #                          df_result[['Duration.Force']].to_numpy()[0][0]
@@ -115,32 +126,32 @@ def py_tsfeatures(df, duration):
                                                                   'RightCalibratedForceValue']].rename(
         columns={'MillisecondsSinceRecord': 'time'})))
 
-    # df_result['Diff.Force.SD'] = round(max(ts_features_left['std1st_der'],
-    #                                        ts_features_right['std1st_der']), 4)
+    df_result['Diff.Force.SD'] = round(max(ts_features_left['std1st_der'],
+                                           ts_features_right['std1st_der']), 4)
     #
-    # df_result['Flat.Spots'] = round(min(ts_features_left['flat_spots'],
-    #                                     ts_features_right['flat_spots']), 4)
+    df_result['Flat.Spots'] = round(min(ts_features_left['flat_spots'],
+                                        ts_features_right['flat_spots']), 4)
     #
     # df_result['Trend.Strength'] = round(mean([ts_features_left['trend_strength'],
     #                                           ts_features_right['trend_strength']]), 4)
     #
-    # df_result['Linearity'] = round(max([abs(ts_features_left['linearity']),
-    #                                     abs(ts_features_right['linearity'])]), 4)
+    df_result['Linearity'] = round(max([abs(ts_features_left['linearity']),
+                                        abs(ts_features_right['linearity'])]), 4)
     #
     # df_result['Stability'] = round(mean([ts_features_left['stability'],
     #                                      ts_features_right['stability']]), 4)
     #
-    df_result['Lumpiness'] = round(mean([ts_features_left['lumpiness'],
-                                         ts_features_right['lumpiness']]), 4)
+    # df_result['Lumpiness'] = round(mean([ts_features_left['lumpiness'],
+    #                                      ts_features_right['lumpiness']]), 4)
     #
-    # df_result['Crossing.Points'] = round(mean([ts_features_left['crossing_points'],
-    #                                            ts_features_right['crossing_points']]), 4)
+    df_result['Crossing.Points'] = round(mean([ts_features_left['crossing_points'],
+                                               ts_features_right['crossing_points']]), 4)
 
-    df_result['Entropy'] = round(max(ts_features_left['entropy'],
-                                     ts_features_right['entropy']), 4)
+    # df_result['Entropy'] = round(max(ts_features_left['entropy'],
+    #                                  ts_features_right['entropy']), 4)
 
-    df_result['Heterogeneity'] = round(max(ts_features_left['heterogeneity'],
-                                           ts_features_right['heterogeneity']), 4)
+    # df_result['Heterogeneity'] = round(max(ts_features_left['heterogeneity'],
+    #                                        ts_features_right['heterogeneity']), 4)
 
     # df_result['Spikiness'] = round(max(ts_features_left['spikiness'],
     #                                    ts_features_right['spikiness']), 4)
@@ -148,14 +159,16 @@ def py_tsfeatures(df, duration):
     # df_result['First.Min.Autocorr'] = round(min(ts_features_left['firstmin_ac'],
     #                                             ts_features_right['firstmin_ac']), 4)
     #
-    # df_result['First.Zero.Autocorr'] = round(min(ts_features_left['firstzero_ac'],
-    #                                              ts_features_right['firstzero_ac']), 4)
-    #
+    df_result['First.Zero.Autocorr'] = round(min(ts_features_left['firstzero_ac'],
+                                                 ts_features_right['firstzero_ac']), 4)
+
     # df_result['Autocorr.Function.1'] = round(min(ts_features_left['y_acf1'],
     #                                              ts_features_right['y_acf1']), 4)
     #
     # df_result['Autocorr.Function.5'] = round(min(ts_features_left['y_acf5'],
     #                                              ts_features_right['y_acf5']), 4)
+
+    df_result = df_result.drop(columns=['data'])
 
     return df_result
 
@@ -208,14 +221,12 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_skill_3d(window_size):
-    os.chdir('..')
-    df = pd.read_csv('./data/df_force_data_with_label.csv',
+    df = pd.read_csv('ai_models/data/df_force_data_with_label.csv',
                      index_col=0, low_memory=False).iloc[:, [0, 1, 2, 6, 9, 11]]
 
     label = ['Novice', 'Expert']
 
     # show how many training examples exist for each of the two states
-    os.chdir('smartforceps-skill-classification-model')
     fig = plt.figure(figsize=(6, 6))
     colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     df['SkillClass'].value_counts().plot(kind='bar',
@@ -238,13 +249,12 @@ def load_Smartforceps_skill_3d(window_size):
                                                                          'RightCalibratedForceValue']]
 
         # start adding hand crafted features
-        seg_duration = df.iloc[(window_size * seg):(window_size * (seg + 1))]['Duration'].mode()[0]
-        df_seg['MillisecondsSinceRecord'] = np.linspace(0, 50 * (window_size - 1), window_size)
-        pd_df_results = py_tsfeatures(df_seg, seg_duration).replace(np.nan, 0)
-        df_seg = df_seg.drop(['MillisecondsSinceRecord'], axis=1)
-
-        df_seg['RresampledFeatures'] = feature_normalization(df_resample(pd_df_results.T,
-                                                                         window_size).to_numpy())
+        # df_seg['MillisecondsSinceRecord'] = np.linspace(0, 50 * (window_size - 1), window_size)
+        # pd_df_results = py_tsfeatures(df_seg).replace(np.nan, 0)
+        # df_seg = df_seg.drop(['MillisecondsSinceRecord'], axis=1)
+        #
+        # df_seg['RresampledFeatures'] = feature_normalization(df_resample(pd_df_results.T,
+        #                                                                  window_size).to_numpy())
         # end adding hand crafted features
 
         # # start adding hand crafted features
@@ -270,6 +280,15 @@ def load_Smartforceps_skill_3d(window_size):
     X = stack(df_segment)
     y = stack(df_labels)
 
+    for lbl in set(df_labels):
+        print(label[lbl], df_labels.count(lbl))
+
+    """
+    Novice 1766
+    Expert 1859
+    
+    """
+
     N_FEATURES = X.shape[2]
 
     X_train_val, X_test, y_train_val, y_test = train_test_split(X,
@@ -279,7 +298,7 @@ def load_Smartforceps_skill_3d(window_size):
 
     X_train, X_val, y_train, y_val = train_test_split(X_train_val,
                                                       y_train_val,
-                                                      test_size=0.1,
+                                                      test_size=0.2,
                                                       random_state=42)
 
     # one hot encode y

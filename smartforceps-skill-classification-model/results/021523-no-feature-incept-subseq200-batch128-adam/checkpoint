@@ -1,0 +1,2 @@
+model_checkpoint_path: "skill_model_23.model"
+all_model_checkpoint_paths: "skill_model_23.model"

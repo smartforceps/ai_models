@@ -1,9 +1,10 @@
+# encoding=utf8
 
 """
     u_net model for time series data segmentation
     
 """
-import os
+
 import numpy as np
 import pandas as pd
 import h5py
@@ -40,8 +41,7 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_segment(subseq):
-    os.chdir('..')
-    df = pd.read_csv('./data/df_force_seg_filtered.csv')[
+    df = pd.read_csv('ai_models/data/df_force_seg_filtered.csv')[
         ['LeftCalibratedForceValue',
          'RightCalibratedForceValue',
          'ForceStatus']]
@@ -49,7 +49,6 @@ def load_Smartforceps_segment(subseq):
 
     label = ['OFF', 'ON']
     # Show how many training examples exist for each of the two states
-    os.chdir('smartforceps-segmentation-model')
     fig = plt.figure(figsize=(6, 8))
     colors = [plt.cm.Set3(i / float(5)) for i in range(5)]
     df['ForceStatus'].value_counts().plot(kind='bar',
@@ -59,11 +58,11 @@ def load_Smartforceps_segment(subseq):
 
     plt.ioff()
     plt.savefig('./results/graphs/class_distribution.png')
-    plt.show()
+    # plt.show()
 
     np_df = np.array(df.drop('ForceStatus', axis=1))
-    norm_np_df = feature_normalization(np_df)
-    # norm_np_df = np_df.copy()
+    # norm_np_df = feature_normalization(np_df)
+    norm_np_df = np_df.copy()
     print('first 3 columns of normalized data:')
     print(norm_np_df[:3])
 
@@ -96,10 +95,10 @@ def load_Smartforceps_segment(subseq):
     print(reshaped_labels.shape)
 
     X_train_val, X_test, y_train_val, y_test = train_test_split(
-        reshaped_segments, reshaped_labels, test_size=0.3, random_state=RANDOM_SEED)
+        reshaped_segments, reshaped_labels, test_size=0.2, random_state=RANDOM_SEED)
 
     X_train, X_val, y_train, y_val = train_test_split(
-        X_train_val, y_train_val, test_size=0.1, random_state=RANDOM_SEED)
+        X_train_val, y_train_val, test_size=0.2, random_state=RANDOM_SEED)
     print('training data shape')
     print(X_train.shape)
 

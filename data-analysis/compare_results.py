@@ -37,7 +37,7 @@ def get_min_max_auc_p_value(roc_auc_comb, roc_comb):
     return round(min_max_p_value, 4)
 
 
-def plot_roc(roc_dict_comb, save_path, difference_p_value):
+def plot_roc(roc_dict_comb, save_path, difference_p_value, job):
     lw = 2
     plt.figure(figsize=(12, 7))
 
@@ -54,22 +54,33 @@ def plot_roc(roc_dict_comb, save_path, difference_p_value):
             if exp_trial_model == 'lstm':
                 trial_name = 'no hand-crafted feature included (LSTM)'
             elif exp_trial_model == 'incept':
-                trial_name = 'no hand-crafted feature included (InceptionTime)'
+                trial_name = 'no hand-crafted feature included (FTFIT)'
         elif exp_trial == 'dash':
             if exp_trial_model == 'lstm':
                 trial_name = 'subset 1 hand-crafted features (n = 4) included (LSTM)'
             elif exp_trial_model == 'incept':
-                trial_name = 'subset 1 hand-crafted features (n = 4) included (InceptionTime)'
+                trial_name = 'subset 1 hand-crafted features (n = 4) included (FTFIT)'
         elif exp_trial == 'some':
             if exp_trial_model == 'lstm':
                 trial_name = 'subset 2 hand-crafted features (n = 8) included (LSTM)'
             elif exp_trial_model == 'incept':
-                trial_name = 'subset 2 hand-crafted features (n = 8) included (InceptionTime)'
+                trial_name = 'subset 2 hand-crafted features (n = 8) included (FTFIT)'
         elif exp_trial == 'with':
             if exp_trial_model == 'lstm':
                 trial_name = 'the full set of hand-crafted features (n = 29) included (LSTM)'
             elif exp_trial_model == 'incept':
-                trial_name = 'the full set of hand-crafted features (n = 29) included (InceptionTime)'
+                trial_name = 'the full set of hand-crafted features (n = 29) included (FTFIT)'
+        elif exp_trial == 'selected':
+            if job == 'task':
+                if exp_trial_model == 'lstm':
+                    trial_name = 'selected features based on importance (n = 7) included (LSTM)'
+                elif exp_trial_model == 'incept':
+                    trial_name = 'selected features based on importance (n = 7) included (FTFIT)'
+            elif job == 'skill':
+                if exp_trial_model == 'lstm':
+                    trial_name = 'selected features based on importance (n = 9) included (LSTM)'
+                elif exp_trial_model == 'incept':
+                    trial_name = 'selected features based on importance (n = 9) included (FTFIT)'
         else:
             trial_name = 'unknown set of hand-crafted features included'
 
@@ -89,31 +100,34 @@ def plot_roc(roc_dict_comb, save_path, difference_p_value):
     plt.title('Receiver operating characteristic curves', size=24)
     plt.legend(loc="lower right")
     if 0.05 > difference_p_value > 0.0001:
-        plt.figtext(0.36, 0.26,  # task
-                    'The maximum diffenece between trials\nwas significant (p-value = {0})'.format(difference_p_value),
-                    fontsize=13)
-        # plt.figtext(0.43, 0.32,  # skill
+        # plt.figtext(0.36, 0.26,  # task
         #             'The maximum diffenece between trials\nwas significant (p-value = {0})'.format(difference_p_value),
         #             fontsize=13)
-    elif difference_p_value < 0.0001:
-        plt.figtext(0.36, 0.26,  # task
-                    'The maximum diffenece between trials\nwas significant (p-value < 0.0001)',
+        plt.figtext(0.43, 0.32,  # skill
+                    'The maximum diffenece between trials\nwas significant (p-value = {0})'.format(difference_p_value),
                     fontsize=13)
-        # plt.figtext(0.43, 0.32,  # skill
+    elif difference_p_value < 0.0001:
+        # plt.figtext(0.36, 0.26,  # task
         #             'The maximum diffenece between trials\nwas significant (p-value < 0.0001)',
         #             fontsize=13)
+        plt.figtext(0.43, 0.32,  # skill
+                    'The maximum diffenece between trials\nwas significant (p-value < 0.001)',
+                    fontsize=13)
 
     plt.ioff()
-    plt.savefig(save_path + '/results/auc_history_model_compares.png')
+    plt.savefig(save_path + '/results/auc_history_model_compares.pdf')
 
 
 """
 some-feature: Duration.Force, Range.Force, Coef.Variance, Peaks.Count, Max.Peak.Value, Entropy, Heterogeneity, Spikiness
 dash-feature: Duration.Force, Range.Force, Entropy, Spikiness
+selected-feayures-task: Entropy, Median Force, Trend Strength, Flat Spots, First Zero Autocorrelation, First Min Autocorrelation, Crossing Points
+selected-feayures-skill: Diff Force SD, Min Force, Crossing Points, Normtest, Flat Spots, Linearity, Skewness, First Zero Autocorrelation, Median Force
 
 """
 # for skill model
-# path = '/home/amir/Desktop/smartforceps_ai_models/smartforceps_dl_prediction_models_tf2/smartforceps_skill_model'
+modeling_for = 'skill'
+path = 'ai_models/smartforceps-skill-classification-model/results/smartforceps_skill_model'
 # test_experiments = [
 # '092921-with-feature-lstm',
 # '092921-no-feature-lstm',
@@ -132,8 +146,16 @@ dash-feature: Duration.Force, Range.Force, Entropy, Spikiness
 #     "100921-with-feature-lstm-subseq200-batch128",
 # ]
 
+test_experiments = ['021523-selected-features-incept-subseq200-batch128-adam',
+                    '021523-selected-features-lstm-subseq200-batch128-adam',
+                    '021523-dash-features-incept-subseq200-batch128-adam',
+                    '021523-dash-features-lstm-subseq200-batch128-adam',
+                    '021523-no-feature-incept-subseq200-batch128-adam',
+                    '021523-no-feature-lstm-subseq200-batch128-adam']
+
 # for task model
-path = '/home/amir/Desktop/smartforceps_ai_models/smartforceps_dl_prediction_models_tf2/smartforceps_task_model'
+# modeling_for = 'task'
+# path = '/home/amir/Desktop/smartforceps_ai_models/smartforceps_dl_prediction_models_tf2/smartforceps_task_model'
 # test_experiments = [
 # '092621-no-feature-lstm',
 # '092421-dash-feature-lstm',
@@ -141,14 +163,21 @@ path = '/home/amir/Desktop/smartforceps_ai_models/smartforceps_dl_prediction_mod
 # '092721-dash-feature-incept'
 # ]
 
-test_experiments = [
-    "100721-dash-feature-incept-subseq200-batch128",
-    "100821-dash-feature-lstm-subseq200-batch128",
-    "100821-no-feature-incept-subseq200-batch128",
-    "100821-no-feature-lstm-subseq200-batch128",
-    "100821-with-feature-incept-subseq200-batch128",
-    "100821-with-feature-lstm-subseq200-batch128",
-]
+# test_experiments = [
+#     "100721-dash-feature-incept-subseq200-batch128",
+#     "100821-dash-feature-lstm-subseq200-batch128",
+#     "100821-no-feature-incept-subseq200-batch128",
+#     "100821-no-feature-lstm-subseq200-batch128",
+#     "100821-with-feature-incept-subseq200-batch128",
+#     "100821-with-feature-lstm-subseq200-batch128",
+# ]
+
+# test_experiments = ['021423-selected-features-incept-subseq200-batch128-adam',
+#                     '021423-selected-features-lstm-subseq200-batch128-adam',
+#                     '021423-dash-features-incept-subseq200-batch128-adam',
+#                     '021423-dash-features-lstm-subseq200-batch128-adam',
+#                     '021423-no-feature-incept-subseq200-batch128-adam',
+#                     '021423-no-feature-lstm-subseq200-batch128-adam']
 
 roc_dict_list = []
 roc_auc_dict = {}
@@ -159,7 +188,7 @@ for exp in test_experiments:
         roc_auc_dict[exp] = roc_dict['roc_auc']['macro']
 
 min_max_auc_p_value = get_min_max_auc_p_value(roc_auc_dict, roc_dict_list)
-plot_roc(roc_dict_list, path, min_max_auc_p_value)
+plot_roc(roc_dict_list, path, min_max_auc_p_value, modeling_for)
 
 ###########################
 
@@ -312,16 +341,21 @@ def py_tsfeatures(df, duration):
     return df_result
 
 
-df = pd.read_csv(
-    './data/df_force_data_with_label.csv',
-    index_col=0, low_memory=False)
+df = pd.read_csv('ai_models/data/df_force_data_with_label.csv', index_col=0, low_memory=False)
 
-label_task = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']
+label_task = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting', 'Other']
+# df.replace({'TaskCategory': {label_task[0]: 0,
+#                              label_task[1]: 1,
+#                              label_task[2]: 2,
+#                              label_task[3]: 3,
+#                              label_task[4]: 4}}, inplace=True)
+
 df.replace({'TaskCategory': {label_task[0]: 0,
                              label_task[1]: 1,
-                             label_task[2]: 2,
-                             label_task[3]: 3,
-                             label_task[4]: 4}}, inplace=True)
+                             label_task[2]: 1,
+                             label_task[3]: 1,
+                             label_task[4]: 1}}, inplace=True)
+
 
 label_skill = ['Novice', 'Expert']
 df.replace({'SkillClass': {label_skill[0]: 0,
@@ -360,21 +394,24 @@ for seg in range(int(df.shape[0] / window_size)):
 
 df_feature_label = pd.DataFrame(feature_label_list, columns=pd_df_results.columns.to_list())
 
+# df_feature_label.replace({'Task.Label': {0: label_task[0],
+#                                          1: label_task[1],
+#                                          2: label_task[2],
+#                                          3: label_task[3],
+#                                          4: label_task[4]}}, inplace=True)
+
 df_feature_label.replace({'Task.Label': {0: label_task[0],
-                                         1: label_task[1],
-                                         2: label_task[2],
-                                         3: label_task[3],
-                                         4: label_task[4]}}, inplace=True)
+                                         1: label_task[5]}}, inplace=True)
 
 df_feature_label.replace({'Skill.Label': {0: label_skill[0],
                                           1: label_skill[1]}}, inplace=True)
 
-df_feature_label.to_csv('./data/df_feature_label.csv')
+df_feature_label.to_csv('ai_models/data/df_feature_label_new.csv')
 
 ######
 # read the processed feature data
 
-df_feature_label = pd.read_csv('./data/df_feature_label.csv',
+df_feature_label = pd.read_csv('ai_models/data/df_feature_label_new.csv',
                                index_col=0).rename(columns={'Duration.Force': 'Duration Force',
                                                             'Range.Force': 'Range Force',
                                                             'Task.Label': 'Task Label',
@@ -383,11 +420,11 @@ df_feature_label = pd.read_csv('./data/df_feature_label.csv',
 features_list = ['Duration Force',
                  'Range Force',
                  'Entropy',
-                 # 'Heterogeneity']
-                 'Stability']
+                 'Heterogeneity']
+                 # 'Stability']
 
-# category = 'Task Label'
-category = 'Skill Label'
+category = 'Task Label'
+# category = 'Skill Label'
 
 df_feature_subset = df_feature_label[features_list]
 
@@ -402,195 +439,10 @@ df_feature_subset_out_removed = df_feature_subset_norm[(np.abs(stats.zscore(df_f
                                                                             df_feature_subset_norm.columns !=
                                                                             category])) < 3).all(axis=1)]
 
-path = './data/feature data/'
+path = 'ai_models/data/feature data/'
 
 sns.pairplot(df_feature_subset_out_removed, kind="reg", hue=category, corner=True,
              plot_kws={'scatter_kws': {'alpha': 0.2}})
-plt.ioff()
-plt.savefig(path + 'features_pairwise_plot_' + category + '_with_' + features_list[-1] + '.png')
-
-######
-# compare augmented segments with the original
-
-df_segs_list_noid = pd.read_csv(
-    './data/df_segs_list_noid.csv', index_col=0)
-df_segs_list_noid_aug = pd.read_csv(
-    './data/df_segs_list_noid_aug.csv', index_col=0)
-
-df_segs_list_noid['mean'] = df_segs_list_noid.iloc[:, 1:401].mean(axis=1)
-df_segs_list_noid['range'] = df_segs_list_noid.iloc[:, 1:401].max(axis=1) - \
-                             df_segs_list_noid.iloc[:, 1:401].min(axis=1)
-
-df_segs_list_noid_aug['mean'] = df_segs_list_noid_aug.iloc[:, 1:401].mean(axis=1)
-df_segs_list_noid_aug['range'] = df_segs_list_noid_aug.iloc[:, 1:401].max(axis=1) - \
-                                 df_segs_list_noid_aug.iloc[:, 1:401].min(axis=1)
-
-df_segs_list_noid['Set'] = 'Original'
-df_segs_list_noid_aug['Set'] = 'Augmented'
-
-df_segs_list_noid_all = pd.concat([df_segs_list_noid, df_segs_list_noid_aug], ignore_index=True)
-df_segs_list_noid_all_nondup = df_segs_list_noid_all.drop_duplicates(subset=[str(x) for x in list(range(1, 401))])
-
-label_task = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']
-df_segs_list_noid_all_nondup.replace({'TaskType': {0: label_task[0],
-                                                   1: label_task[1],
-                                                   2: label_task[2],
-                                                   3: label_task[3],
-                                                   4: label_task[4]}}, inplace=True)
-
-# Create Fig and gridspec
-fig = plt.figure(figsize=(24, 15), dpi=320)
-grid = plt.GridSpec(4, 4, hspace=0.5, wspace=0.2)
-
-# Define the axes
-ax_main = fig.add_subplot(grid[:-1, :-1])
-ax_right = fig.add_subplot(grid[:-1, -1], xticklabels=[], yticklabels=[])
-ax_bottom = fig.add_subplot(grid[-1, 0:-1], xticklabels=[], yticklabels=[])
-
-# Scatterplot on main ax
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Original") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Coagulation")].reset_index().plot(kind='scatter',
-                                                                 x='mean', y='range',
-                                                                 s=2,
-                                                                 color='mediumturquoise',
-                                                                 label='Original Coagulation',
-                                                                 alpha=0.3,
-                                                                 ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Original") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Pulling")].reset_index().plot(kind='scatter',
-                                                             x='mean', y='range',
-                                                             s=4,
-                                                             color='mediumturquoise',
-                                                             label='Original Pulling',
-                                                             alpha=0.3,
-                                                             ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Original") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Manipulation")].reset_index().plot(kind='scatter',
-                                                                  x='mean', y='range',
-                                                                  s=6,
-                                                                  color='mediumturquoise',
-                                                                  label='Original Manipulation',
-                                                                  alpha=0.3,
-                                                                  ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Original") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Dissecting")].reset_index().plot(kind='scatter',
-                                                                x='mean', y='range',
-                                                                s=8,
-                                                                color='mediumturquoise',
-                                                                label='Original Dissecting',
-                                                                alpha=0.3,
-                                                                ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Original") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Retracting")].reset_index().plot(kind='scatter',
-                                                                x='mean', y='range',
-                                                                s=10,
-                                                                color='mediumturquoise',
-                                                                label='Original Retracting',
-                                                                alpha=0.3,
-                                                                ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Augmented") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Coagulation")].reset_index().plot(kind='scatter',
-                                                                 x='mean', y='range',
-                                                                 s=2,
-                                                                 color='lightcoral',
-                                                                 label='Augmented Coagulation',
-                                                                 alpha=0.2,
-                                                                 ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Augmented") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Pulling")].reset_index().plot(kind='scatter',
-                                                             x='mean', y='range',
-                                                             s=4,
-                                                             color='lightcoral',
-                                                             label='Augmented Pulling',
-                                                             alpha=0.2,
-                                                             ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Augmented") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Manipulation")].reset_index().plot(kind='scatter',
-                                                                  x='mean', y='range',
-                                                                  s=6,
-                                                                  color='lightcoral',
-                                                                  label='Augmented Manipulation',
-                                                                  alpha=0.2,
-                                                                  ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Augmented") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Dissecting")].reset_index().plot(kind='scatter',
-                                                                x='mean', y='range',
-                                                                s=8,
-                                                                color='lightcoral',
-                                                                label='Augmented Dissecting',
-                                                                alpha=0.2,
-                                                                ax=ax_main)
-
-df_segs_list_noid_all_nondup[(df_segs_list_noid_all_nondup["Set"] ==
-                              "Augmented") &
-                             (df_segs_list_noid_all_nondup["TaskType"] ==
-                              "Retracting")].reset_index().plot(kind='scatter',
-                                                                x='mean', y='range',
-                                                                s=10,
-                                                                color='lightcoral',
-                                                                label='Augmented Retracting',
-                                                                alpha=0.2,
-                                                                ax=ax_main)
-
-# ax_main.scatter('mean', 'max', s=df_segs_list_noid_aug.mean, c=df_segs_list_noid_aug.max, alpha=.9,
-#                 data=df_segs_list_noid_aug, cmap="Set1", edgecolors='black', linewidths=.5)
-
-# Add a graph in each part
-sns.boxplot(y=np.array(df_segs_list_noid['range']), color="mediumturquoise", ax=ax_right, orient="v")
-sns.boxplot(x=np.array(df_segs_list_noid['mean']), color="mediumturquoise", ax=ax_bottom, orient="h")
-
-sns.boxplot(y=np.array(df_segs_list_noid_aug['range']), color="lightcoral", ax=ax_right,
-            orient="v", boxprops=dict(alpha=.3))
-sns.boxplot(x=np.array(df_segs_list_noid_aug['mean']), color="lightcoral", ax=ax_bottom,
-            orient="h", boxprops=dict(alpha=.3))
-
-print("mean range:", np.round(np.mean(np.array(df_segs_list_noid_aug['range'])), 2))
-print("std range:", np.round(np.std(np.array(df_segs_list_noid_aug['range'])), 2))
-print("mean mean:", np.round(np.mean(np.array(df_segs_list_noid_aug['mean'])), 2))
-print("std mean:", np.round(np.std(np.array(df_segs_list_noid_aug['mean'])), 2))
-
-# Decorations ------------------
-# Remove x axis name for the boxplot
-ax_bottom.set(xlabel='')
-ax_right.set(ylabel='')
-
-# Main Title, Xlabel and YLabel
-ax_main.set(title='Scatterplot with histograms of Range vs. Mean \n for augmented and original force profile segments',
-            xlabel='Mean', ylabel='Range')
-
-# Set font size of different components
-ax_main.title.set_fontsize(24)
-for item in ([ax_main.xaxis.label, ax_main.yaxis.label] + ax_main.get_xticklabels() + ax_main.get_yticklabels()):
-    item.set_fontsize(18)
-
-
-path = './data/DTW_data_augmentation/SmartForceps_Archive/'
 
 plt.ioff()
-plt.savefig(path + 'augmentation_segments_plot_.png')
+plt.savefig(path + 'features_pairwise_plot_' + category + '_with_' + features_list[-1] + '_new.pdf')

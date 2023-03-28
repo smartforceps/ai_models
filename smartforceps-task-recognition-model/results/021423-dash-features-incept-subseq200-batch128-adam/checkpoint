@@ -1,0 +1,2 @@
+model_checkpoint_path: "task_model_23.model"
+all_model_checkpoint_paths: "task_model_23.model"

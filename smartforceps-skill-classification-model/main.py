@@ -1,3 +1,4 @@
+# encoding=utf8
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -14,8 +15,8 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 from tensorflow.keras import backend as K
 import pickle
 # import unet_224_model
-import model_lstm
-import model_ineption
+import models_lstm
+import models_ftfit
 import data_load_skill
 import model_info
 import common
@@ -80,8 +81,9 @@ def mywloss(y_true, y_pred):
 clfs = []
 oof_preds = np.zeros((y_train.shape[0], y_train.shape[1]))
 epochs = 100
-batch_size = 32
+batch_size = 128  # 16
 optim_type = 'adam'
+# optim_type = 'SGD'
 sum_time = 0
 hyper_params_list_len = 4
 learning_rate_list = [0.001, 0.01, 0.1]
@@ -112,15 +114,15 @@ for i in range(len(learning_rate_list)):
         if args.net == 'lstm_model':
             units_size_val = units_size_list[j]
             print('network units = ', units_size_val)
-            sub_model = model_lstm.lstm_model(units_size=units_size_val,
-                                              timesteps_count=subseq,
-                                              feature_count=N_FEATURES,
-                                              activation='relu',
-                                              n_output=act_classes)
+            sub_model = models_lstm.lstm_model(units_size=units_size_val,
+                                               timesteps_count=subseq,
+                                               feature_count=N_FEATURES,
+                                               activation='relu',
+                                               n_output=act_classes)
         elif args.net == 'inception_time':
             depth_val = depth_list[j]
             print('network depth = ', depth_val)
-            sub_model = model_ineption.build_inception_model(
+            sub_model = models_ftfit.build_inception_model(
                 input_shape=trainX.shape[1:],
                 nb_classes=act_classes,
                 depth=depth_val)
@@ -133,7 +135,7 @@ for i in range(len(learning_rate_list)):
         sub_model.compile(loss=mywloss, optimizer=optim, metrics=['accuracy'])
 
         callbacks_list = [
-            ModelCheckpoint("./results/keras_skill_incept_" + str(i) + str(j) + ".model",
+            ModelCheckpoint("./results/skill_model_" + str(i) + str(j) + ".model",
                             monitor='val_loss',
                             mode='min',
                             save_best_only=True,
@@ -192,15 +194,15 @@ for i in range(acc.shape[0]):
                                                                                               val_acc[i]))
 
 print('Loading Best Model')
-model.load_weights('./results/keras_skill_incept_' +
+model.load_weights('./results/skill_model_' +
                    str(min_val_loss_idx[0].tolist()[0]) +
                    str(min_val_loss_idx[1].tolist()[0]) + '.model')
 # serialize model to JSON
 model_json = model.to_json()
-with open("./results/keras_skill_incept.json", "w") as json_file:
+with open("./results/skill_model.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model.save_weights("./results/keras_skill_incept.h5")
+model.save_weights("./results/skill_model.h5")
 print("Saved model to disk")
 # get predicted probabilities for each class
 valid_pred = model.predict(validX, batch_size=batch_size)

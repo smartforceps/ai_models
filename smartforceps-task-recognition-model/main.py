@@ -1,3 +1,4 @@
+# encoding=utf8
 import numpy as np
 from numpy import mean
 from numpy import std
@@ -14,8 +15,8 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 from tensorflow.keras import backend as K
 import pickle
 # import unet_224_model
-import model_lstm
-import model_ineption
+import models_lstm
+import models_ftfit
 import data_load_task
 import model_info
 import common
@@ -44,6 +45,8 @@ parser.add_argument('--net', type=str, nargs='?', default='unet', help="net name
 
 args = parser.parse_args()
 subseq = args.subseq
+# file_log = 'UNET_'+args.block+'_'+args.dataset+'_'+str(subseq)+'.log'
+# file_log = 'MASK_'+args.dataset+'_'+str(subseq)+'.log'
 file_log = './results/' + args.net + '_' + args.dataset + '_' + str(subseq) + '.log'
 
 logging.basicConfig(filename=file_log, level=logging.DEBUG)
@@ -79,13 +82,11 @@ def mywloss(y_true, y_pred):
     return loss
 
 
-folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
-
 clfs = []
 oof_preds = np.zeros((y_train.shape[0], y_train.shape[1]))
 epochs = 150
-batch_size = 128
-optim_type = 'adam'
+batch_size = 128  # 32
+optim_type = 'adam'  # 'SGD'
 sum_time = 0
 hyper_params_list_len = 4
 learning_rate_list = [0.001, 0.01, 0.1]
@@ -116,15 +117,15 @@ for i in range(len(learning_rate_list)):
         if args.net == 'lstm_model':
             units_size_val = units_size_list[j]
             print('network units = ', units_size_val)
-            sub_model = model_lstm.lstm_model(units_size=units_size_val,
-                                              timesteps_count=subseq,
-                                              feature_count=N_FEATURES,
-                                              activation='relu',
-                                              n_output=act_classes)
+            sub_model = models_lstm.lstm_model(units_size=units_size_val,
+                                               timesteps_count=subseq,
+                                               feature_count=N_FEATURES,
+                                               activation='relu',
+                                               n_output=act_classes)
         elif args.net == 'inception_time':
             depth_val = depth_list[j]
             print('network depth = ', depth_val)
-            sub_model = model_ineption.build_inception_model(
+            sub_model = models_ftfit.build_inception_model(
                 input_shape=trainX.shape[1:],
                 nb_classes=act_classes,
                 depth=depth_val)
@@ -137,7 +138,7 @@ for i in range(len(learning_rate_list)):
         sub_model.compile(loss='categorical_crossentropy', optimizer=optim, metrics=['accuracy'])
 
         # callbacks_list = [
-        #     ModelCheckpoint("./results/keras_task.model",
+        #     ModelCheckpoint("./results/task_model.model",
         #                     monitor='val_loss',
         #                     mode='min',
         #                     save_best_only=True,
@@ -146,7 +147,7 @@ for i in range(len(learning_rate_list)):
         #     EarlyStopping(monitor='val_loss', patience=1)
         # ]
         callbacks_list = [
-            ModelCheckpoint("./results/keras_task_" + str(i) + str(j) + ".model",
+            ModelCheckpoint("./results/task_model_" + str(i) + str(j) + ".model",
                             monitor='val_loss',
                             mode='min',
                             save_best_only=True,
@@ -205,7 +206,7 @@ for i in range(acc.shape[0]):
                                                                                               val_acc[i]))
 
 print('Loading Best Model')
-model.load_weights('./results/keras_task_' + str(min_val_loss_idx[0].tolist()[0]) +
+model.load_weights('./results/task_model_' + str(min_val_loss_idx[0].tolist()[0]) +
                    str(min_val_loss_idx[1].tolist()[0]) + '.model')
 # serialize model to JSON
 model_json = model.to_json()
