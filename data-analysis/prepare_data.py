@@ -8,7 +8,9 @@ from bisect import bisect_left as lower_bound
 
 warnings.filterwarnings('ignore')
 
-force_data_labels = pd.read_csv('ai_models/data/Data Info.csv')
+os.chdir('..')
+force_data_labels = pd.read_csv(os.getcwd() + '/data/Data Info.csv')
+os.chdir('data-analysis')
 
 
 def hhmmss_to_sec(hhmmss):
@@ -163,9 +165,13 @@ def prepare_augmented_seg_data():
     resample_length = 200
 
     try:
-        df_segs_list = pd.read_csv('ai_models/data/df_segs_list.csv', index_col=0)
+        os.chdir('..')
+        df_segs_list = pd.read_csv(os.getcwd() + '/data/df_segs_list.csv', index_col=0)
+        os.chdir('data-analysis')
     except:
-        df_force_seg_processed = pd.read_csv('SmartForcepsDataProcessed.csv', index_col=0)
+        os.chdir('..')
+        df_force_seg_processed = pd.read_csv(os.getcwd() + '/data/SmartForcepsDataProcessed.csv', index_col=0)
+        os.chdir('data-analysis')
         df_force_seg_processed.replace({'TaskType': {'Pulling': 0,
                                                      'Manipulation': 1,
                                                      'Dissecting': 2,
@@ -189,7 +195,9 @@ def prepare_augmented_seg_data():
                                     columns=['SegmentNumOverall',
                                              'TaskType'] + [str(x + 1) for x in range(2 * resample_length)])
 
-        df_segs_list.to_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/df_segs_list.csv')
+        os.chdir('..')
+        df_segs_list.to_csv(os.getcwd() + '/data/df_segs_list.csv')
+        os.chdir('data-analysis')
 
     # get sample tests
     df_segs_list_model_test = df_segs_list.sample(frac=0.2, random_state=resample_length)
@@ -210,7 +218,9 @@ def prepare_augmented_seg_data():
     df_model_test = pd.DataFrame([seg_num, left_force, right_force, task_type]).transpose()
     df_model_test.columns = ['SegmentNumber', 'LeftCalibratedForceValue', 'RightCalibratedForceValue', 'TaskCategory']
 
-    df_model_test.to_csv('ai_models/data/df_force_data_with_label_model_test.csv')
+    os.chdir('..')
+    df_model_test.to_csv(os.getcwd() + '/data/df_force_data_with_label_model_test.csv')
+    os.chdir('data-analysis')
 
     df_segs_list_no_coag = df_segs_list[df_segs_list['TaskType'] != 4]
     df_segs_list_coag = df_segs_list[df_segs_list['TaskType'] == 4]
@@ -279,8 +289,9 @@ def prepare_augmented_seg_data():
         df = pd.DataFrame([seg_num, left_force, right_force, task_type]).transpose()
         df.columns = ['SegmentNumber', 'LeftCalibratedForceValue', 'RightCalibratedForceValue', 'TaskCategory']
 
-        df.to_csv('/home/amir/Desktop/smartforceps_ai_models/data/smartforceps_data/'
-                  'df_force_data_with_label_aug_only_train.csv')
+        os.chdir('..')
+        df.to_csv(os.getcwd() + '/data/df_force_data_with_label_aug_only_train.csv')
+        os.chdir('data-analysis')
     else:
         df_segs_aug = 'augmented data not available'
 
@@ -291,9 +302,13 @@ def prepare_balanced_task_data():
     resample_length = 200
 
     try:
-        df_segs_list = pd.read_csv('ai_models/data/df_segs_list.csv', index_col=0)
+        os.chdir('..')
+        df_segs_list = pd.read_csv(os.getcwd() + '/data/df_segs_list.csv', index_col=0)
+        os.chdir('data-analysis')
     except:
-        df_force_seg_processed = pd.read_csv('SmartForcepsDataProcessed.csv', index_col=0)
+        os.chdir('..')
+        df_force_seg_processed = pd.read_csv(os.getcwd() + '/data/SmartForcepsDataProcessed.csv', index_col=0)
+        os.chdir('data-analysis')
         df_force_seg_processed.replace({'TaskType': {'Pulling': 0,
                                                      'Manipulation': 1,
                                                      'Dissecting': 2,
@@ -317,7 +332,9 @@ def prepare_balanced_task_data():
                                     columns=['SegmentNumOverall',
                                              'TaskType'] + [str(x + 1) for x in range(2 * resample_length)])
 
-        df_segs_list.to_csv('ai_models/data/df_segs_list.csv')
+        os.chdir('..')
+        df_segs_list.to_csv(os.getcwd() + '/data/df_segs_list.csv')
+        os.chdir('data-analysis')
 
     df_segs_list_no_coag = df_segs_list[df_segs_list['TaskType'] != 4]
     df_segs_list_coag = df_segs_list[df_segs_list['TaskType'] == 4]
@@ -362,7 +379,9 @@ def prepare_balanced_task_data():
     df = pd.DataFrame([seg_num, left_force, right_force, task_type]).transpose()
     df.columns = ['SegmentNumber', 'LeftCalibratedForceValue', 'RightCalibratedForceValue', 'TaskCategory']
 
-    df.to_csv('ai_models/data/df_force_data_with_label_balanced.csv')
+    os.chdir('..')
+    df.to_csv(os.getcwd() + '/data/df_force_data_with_label_balanced.csv')
+    os.chdir('data-analysis')
 
 
 # read force data and assign labels

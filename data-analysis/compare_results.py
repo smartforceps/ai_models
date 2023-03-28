@@ -1,3 +1,4 @@
+import os
 import pickle
 import numpy as np
 import pandas as pd
@@ -341,7 +342,9 @@ def py_tsfeatures(df, duration):
     return df_result
 
 
-df = pd.read_csv('ai_models/data/df_force_data_with_label.csv', index_col=0, low_memory=False)
+os.chdir('..')
+df = pd.read_csv(os.getcwd() + '/data/df_force_data_with_label.csv', index_col=0, low_memory=False)
+os.chdir('data-analysis')
 
 label_task = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting', 'Other']
 # df.replace({'TaskCategory': {label_task[0]: 0,
@@ -355,7 +358,6 @@ df.replace({'TaskCategory': {label_task[0]: 0,
                              label_task[2]: 1,
                              label_task[3]: 1,
                              label_task[4]: 1}}, inplace=True)
-
 
 label_skill = ['Novice', 'Expert']
 df.replace({'SkillClass': {label_skill[0]: 0,
@@ -406,22 +408,26 @@ df_feature_label.replace({'Task.Label': {0: label_task[0],
 df_feature_label.replace({'Skill.Label': {0: label_skill[0],
                                           1: label_skill[1]}}, inplace=True)
 
-df_feature_label.to_csv('ai_models/data/df_feature_label_new.csv')
+os.chdir('..')
+df = pd.read_csv(os.getcwd() + '/data/df_feature_label_new.csv')
+os.chdir('data-analysis')
 
 ######
 # read the processed feature data
 
-df_feature_label = pd.read_csv('ai_models/data/df_feature_label_new.csv',
+os.chdir('..')
+df_feature_label = pd.read_csv(os.getcwd() + '/data/df_feature_label_new.csv',
                                index_col=0).rename(columns={'Duration.Force': 'Duration Force',
                                                             'Range.Force': 'Range Force',
                                                             'Task.Label': 'Task Label',
                                                             'Skill.Label': 'Skill Label'})
+os.chdir('data-analysis')
 
 features_list = ['Duration Force',
                  'Range Force',
                  'Entropy',
                  'Heterogeneity']
-                 # 'Stability']
+# 'Stability']
 
 category = 'Task Label'
 # category = 'Skill Label'
@@ -439,7 +445,9 @@ df_feature_subset_out_removed = df_feature_subset_norm[(np.abs(stats.zscore(df_f
                                                                             df_feature_subset_norm.columns !=
                                                                             category])) < 3).all(axis=1)]
 
-path = 'ai_models/data/feature data/'
+os.chdir('..')
+path = os.getcwd() + '/data/feature data/'
+os.chdir('data-analysis')
 
 sns.pairplot(df_feature_subset_out_removed, kind="reg", hue=category, corner=True,
              plot_kws={'scatter_kws': {'alpha': 0.2}})

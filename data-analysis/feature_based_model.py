@@ -5,6 +5,7 @@
 
 """
 
+import os
 import numpy as np
 import pandas as pd
 from numpy import stack
@@ -253,7 +254,9 @@ if classification_task == 'Task':
     label_column = 'TaskCategory'
 
     # using balanced data
-    df = pd.read_csv('ai_models/data/df_force_data_with_label_balanced.csv', index_col=0, low_memory=False)
+    os.chdir('..')
+    df = pd.read_csv(os.getcwd() + '/data/df_force_data_with_label_balanced.csv', index_col=0, low_memory=False)
+    os.chdir('data-analysis')
 
     label_original = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']
     label = ['Coagulation', 'Other']
@@ -267,8 +270,10 @@ if classification_task == 'Task':
 elif classification_task == 'Skill':
     label_column = 'SkillClass'
 
-    df = pd.read_csv('ai_models/data/df_force_data_with_label.csv',
+    os.chdir('..')
+    df = pd.read_csv(os.getcwd() + '/data/df_force_data_with_label.csv',
                      index_col=0, low_memory=False).iloc[:, [0, 1, 2, 6, 9, 11]]
+    os.chdir('data-analysis')
 
     df = df.dropna()
 
