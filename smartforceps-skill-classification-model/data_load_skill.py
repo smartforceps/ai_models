@@ -5,6 +5,7 @@
 
 """
 
+import os
 import numpy as np
 import pandas as pd
 from numpy import stack
@@ -221,8 +222,10 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_skill_3d(window_size):
-    df = pd.read_csv('ai_models/data/df_force_data_with_label.csv',
+    os.chdir('..')
+    df = pd.read_csv(os.getcwd() + '/data/df_force_data_with_label.csv',
                      index_col=0, low_memory=False).iloc[:, [0, 1, 2, 6, 9, 11]]
+    os.chdir('smartforceps-skill-classification-model')
 
     label = ['Novice', 'Expert']
 

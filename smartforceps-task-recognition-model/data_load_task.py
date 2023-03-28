@@ -5,6 +5,7 @@
     
 """
 
+import os
 import numpy as np
 import pandas as pd
 from numpy import stack
@@ -221,7 +222,9 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_task(window_size):
-    df = pd.read_csv('ai_models/data/df_force_data_with_label_balanced.csv', index_col=0, low_memory=False)
+    os.chdir('..')
+    df = pd.read_csv(os.getcwd() + '/data/df_force_data_with_label_balanced.csv', index_col=0, low_memory=False)
+    os.chdir('smartforceps-task-recognition-model')
 
     label_original = ['Coagulation', 'Pulling', 'Manipulation', 'Dissecting', 'Retracting']
     label = ['Coagulation', 'Other']

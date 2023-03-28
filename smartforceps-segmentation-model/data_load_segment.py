@@ -41,10 +41,13 @@ def load_data(data_name='Smartforceps', subseq=224):
 
 
 def load_Smartforceps_segment(subseq):
-    df = pd.read_csv('ai_models/data/df_force_seg_filtered.csv')[
+    os.chdir('..')
+    df = pd.read_csv(os.getcwd() + '/data/df_force_seg_filtered.csv')[
         ['LeftCalibratedForceValue',
          'RightCalibratedForceValue',
          'ForceStatus']]
+    os.chdir('smartforceps-segmentation-model')
+
     df = df.dropna()
 
     label = ['OFF', 'ON']
